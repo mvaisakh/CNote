@@ -78,6 +78,6 @@ private:
     // Internal State
     int m_currentTool = Pen;
 
-    void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points);
+    void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points, float baseWidth);
     QSGGeometryNode* createStrokeNode(const Stroke& s);
 };

@@ -19,18 +19,48 @@ NoteCanvas::~NoteCanvas() {}
 
 QSGGeometryNode* NoteCanvas::createStrokeNode(const Stroke& s)
 {
+    if (s.points.size() < 2) return nullptr;
+
     QSGGeometryNode *node = new QSGGeometryNode();
     node->setFlag(QSGNode::OwnsGeometry);
     node->setFlag(QSGNode::OwnsMaterial);
 
-    QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), s.points.size());
-    geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-    geo->setLineWidth(s.width);
+    // We need 2 vertices per point for a triangle strip
+    int vertexCount = s.points.size() * 2;
+    QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
+    geo->setDrawingMode(QSGGeometry::DrawTriangleStrip);
     
     QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
+    
     for (size_t i = 0; i < s.points.size(); ++i) {
-        v[i].set(s.points[i].x, s.points[i].y);
+        QPointF p(s.points[i].x, s.points[i].y);
+        QPointF dir;
+        
+        if (i == 0) {
+            dir = QPointF(s.points[i+1].x, s.points[i+1].y) - p;
+        } else if (i == s.points.size() - 1) {
+            dir = p - QPointF(s.points[i-1].x, s.points[i-1].y);
+        } else {
+            QPointF d1 = p - QPointF(s.points[i-1].x, s.points[i-1].y);
+            QPointF d2 = QPointF(s.points[i+1].x, s.points[i+1].y) - p;
+            dir = (d1 + d2) / 2.0;
+        }
+
+        // Calculate normal
+        float len = std::sqrt(dir.x()*dir.x() + dir.y()*dir.y());
+        QPointF normal(0, 0);
+        if (len > 0.0001f) {
+            normal = QPointF(-dir.y() / len, dir.x() / len);
+        }
+
+        float pressure = s.points[i].pressure;
+        // Ensure some minimum width even for light touches
+        float halfWidth = (s.width * (0.2f + pressure * 0.8f)) / 2.0f;
+
+        v[i*2].set(p.x() + normal.x() * halfWidth, p.y() + normal.y() * halfWidth);
+        v[i*2+1].set(p.x() - normal.x() * halfWidth, p.y() - normal.y() * halfWidth);
     }
+    
     node->setGeometry(geo);
 
     QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
@@ -47,14 +77,40 @@ void NoteCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeom
     QQuickItem::geometryChange(newGeometry, oldGeometry);
 }
 
-void NoteCanvas::updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points)
+void NoteCanvas::updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points, float baseWidth)
 {
-    if (geometry->vertexCount() != (int)points.size())
-        geometry->allocate(points.size());
+    int vertexCount = points.size() * 2;
+    if (geometry->vertexCount() != vertexCount)
+        geometry->allocate(vertexCount);
 
     QSGGeometry::Point2D *v = geometry->vertexDataAsPoint2D();
     for (size_t i = 0; i < points.size(); ++i) {
-        v[i].set(points[i].x, points[i].y);
+        QPointF p(points[i].x, points[i].y);
+        QPointF dir;
+        
+        if (i == 0 && points.size() > 1) {
+            dir = QPointF(points[i+1].x, points[i+1].y) - p;
+        } else if (i > 0 && i == points.size() - 1) {
+            dir = p - QPointF(points[i-1].x, points[i-1].y);
+        } else if (i > 0 && i < points.size() - 1) {
+            QPointF d1 = p - QPointF(points[i-1].x, points[i-1].y);
+            QPointF d2 = QPointF(points[i+1].x, points[i+1].y) - p;
+            dir = (d1 + d2) / 2.0;
+        } else {
+            dir = QPointF(1, 0); // Single point fallback
+        }
+
+        float len = std::sqrt(dir.x()*dir.x() + dir.y()*dir.y());
+        QPointF normal(0, 0);
+        if (len > 0.0001f) {
+            normal = QPointF(-dir.y() / len, dir.x() / len);
+        }
+
+        float pressure = points[i].pressure;
+        float halfWidth = (baseWidth * (0.2f + pressure * 0.8f)) / 2.0f;
+
+        v[i*2].set(p.x() + normal.x() * halfWidth, p.y() + normal.y() * halfWidth);
+        v[i*2+1].set(p.x() - normal.x() * halfWidth, p.y() - normal.y() * halfWidth);
     }
 }
 
@@ -376,15 +432,12 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             node->setFlag(QSGNode::OwnsGeometry);
             node->setFlag(QSGNode::OwnsMaterial);
 
-            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
-            geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-            float activeWidth = m_currentTool == Highlighter ? 15.0f : 3.0f;
-            geo->setLineWidth(activeWidth);
+            float activeWidth = m_currentTool == Highlighter ? 15.0f : 2.0f;
+            int vertexCount = m_activePoints.size() * 2;
+            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
+            geo->setDrawingMode(QSGGeometry::DrawTriangleStrip);
             
-            QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
-            for (size_t i = 0; i < m_activePoints.size(); ++i) {
-                v[i].set(m_activePoints[i].x, m_activePoints[i].y);
-            }
+            updateGeometry(geo, m_activePoints, activeWidth);
             node->setGeometry(geo);
 
             QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
