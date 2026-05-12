@@ -112,8 +112,8 @@ jobs:
       - name: Build MuPDF (Windows)
         if: matrix.os == 'windows-latest' && steps.cache-mupdf.outputs.cache-hit != 'true'
         run: |
-          curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.zip -o mupdf.zip
-          7z x mupdf.zip
+          curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+          python -c "import tarfile; tar = tarfile.open('mupdf.tar.gz'); tar.extractall(); tar.close()"
           cd mupdf-1.27.2-source
           if [ "${{ matrix.target_arch }}" == "arm64" ]; then
             MS_PLATFORM="ARM64"
