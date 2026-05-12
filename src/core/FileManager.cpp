@@ -34,3 +34,15 @@ QString FileManager::getStoragePath() const
 {
     return m_basePath;
 }
+
+QStringList FileManager::getImportedFiles() const
+{
+    QDir dir(m_basePath);
+    QStringList filters;
+    filters << "*.pdf";
+    QStringList files = dir.entryList(filters, QDir::Files, QDir::Time);
+    for (int i = 0; i < files.size(); ++i) {
+        files[i] = m_basePath + "/" + files[i];
+    }
+    return files;
+}

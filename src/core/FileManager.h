@@ -18,6 +18,7 @@ public:
 
     Q_INVOKABLE QString importPdf(const QUrl &fileUrl);
     Q_INVOKABLE QString getStoragePath() const;
+    Q_INVOKABLE QStringList getImportedFiles() const;
 
 private:
     QString m_basePath;
