@@ -175,15 +175,19 @@ bool NoteCanvas::event(QEvent *event)
     } else if (event->type() == QEvent::Wheel) {
         QWheelEvent *we = static_cast<QWheelEvent*>(event);
         float delta = we->angleDelta().y() / 120.0f;
-        float factor = 1.1f;
-        if (delta < 0) factor = 1.0f / factor;
         
-        // Zoom relative to mouse position
-        QPointF mousePos = we->position();
-        QPointF before = mapToCanvas(mousePos);
-        m_zoomLevel *= factor;
-        QPointF after = mapToCanvas(mousePos);
-        m_panOffset += (after - before) * m_zoomLevel;
+        if (we->modifiers() & Qt::ControlModifier) {
+            // Zoom relative to mouse position
+            float factor = (delta > 0) ? 1.1f : (1.0f / 1.1f);
+            QPointF mousePos = we->position();
+            QPointF before = mapToCanvas(mousePos);
+            m_zoomLevel *= factor;
+            QPointF after = mapToCanvas(mousePos);
+            m_panOffset += (after - before) * m_zoomLevel;
+        } else {
+            // Standard Vertical Scroll
+            m_panOffset.setY(m_panOffset.y() + delta * 60);
+        }
         
         m_transformDirty = true;
         update();
@@ -298,12 +302,24 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGNode *staticLayer = root->childAtIndex(1);
     QSGNode *activeLayer = root->childAtIndex(2);
 
-    // 1. Update PDF Background
+    // 1. Update PDF Background (Multi-page)
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
-        CN_TRACE("Rendering PDF (Fit-to-Page, High-DPI)...");
+        CN_TRACE("Rendering multi-page document flow...");
         
-        QSizeF pageSize = m_pdfEngine.pageSize(0);
-        if (!pageSize.isEmpty()) {
+        while (pdfLayer->childCount() > 0) {
+            QSGNode *n = pdfLayer->childAtIndex(0);
+            pdfLayer->removeChildNode(n);
+            delete n;
+        }
+
+        int pageCount = m_pdfEngine.pageCount();
+        float currentY = 0;
+        float spacing = 20.0f; // Gap between pages
+
+        for (int i = 0; i < pageCount; ++i) {
+            QSizeF pageSize = m_pdfEngine.pageSize(i);
+            if (pageSize.isEmpty()) continue;
+
             qreal dpr = window()->devicePixelRatio();
             float baseScale = std::min(m_renderSize.width() / pageSize.width(), 
                                        m_renderSize.height() / pageSize.height());
@@ -311,30 +327,21 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             float renderScale = baseScale * dpr;
             int targetW = pageSize.width() * baseScale;
             int targetH = pageSize.height() * baseScale;
-            
-            // Center the PDF in the workspace
             int offsetX = (m_renderSize.width() - targetW) / 2;
-            int offsetY = (m_renderSize.height() - targetH) / 2;
 
-            // Render at physical resolution
-            QImage img = m_pdfEngine.renderTile(0, 0, 0, targetW * dpr, targetH * dpr, renderScale);
+            QImage img = m_pdfEngine.renderTile(i, 0, 0, targetW * dpr, targetH * dpr, renderScale);
             if (!img.isNull()) {
                 QSGTexture *texture = window()->createTextureFromImage(img);
                 if (texture) {
                     texture->setFiltering(QSGTexture::Linear);
-                    while (pdfLayer->childCount() > 0) {
-                        QSGNode *n = pdfLayer->childAtIndex(0);
-                        pdfLayer->removeChildNode(n);
-                        delete n;
-                    }
-                    
                     QSGSimpleTextureNode *node = new QSGSimpleTextureNode();
                     node->setOwnsTexture(true);
                     node->setTexture(texture);
-                    node->setRect(offsetX, offsetY, targetW, targetH);
+                    node->setRect(offsetX, currentY, targetW, targetH);
                     pdfLayer->appendChildNode(node);
                 }
             }
+            currentY += targetH + spacing;
         }
         m_pdfDirty = false;
     }
