@@ -75,8 +75,16 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build MuPDF (Linux Source)
+    - name: Cache MuPDF (Linux)
       if: matrix.os == 'ubuntu-latest' && matrix.target_arch == 'arm64'
+      id: cache-mupdf-linux
+      uses: actions/cache@v4
+      with:
+        path: third_party/mupdf
+        key: linux-${{ matrix.target_arch }}-mupdf-1.27.2
+
+    - name: Build MuPDF (Linux Source)
+      if: matrix.os == 'ubuntu-latest' && matrix.target_arch == 'arm64' && steps.cache-mupdf-linux.outputs.cache-hit != 'true'
       run: |
         curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
         tar -xzf mupdf.tar.gz
