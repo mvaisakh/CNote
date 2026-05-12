@@ -41,9 +41,9 @@ jobs:
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-windows-lib.zip -o mupdf.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-windows-lib.zip -o mupdf.zip
         expand-archive mupdf.zip -destinationpath third_party/mupdf
-        mv third_party/mupdf/mupdf-1.23.11-windows-lib/* third_party/mupdf/
+        move third_party/mupdf/mupdf-1.23.11-windows-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -63,23 +63,27 @@ jobs:
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        VERSION=$(cmake -LA build | grep "APP_VERSION_STR:STRING" | cut -d'=' -f2)
+        VERSION=$(cat VERSION.txt | tr -d '\n')
         cp build/CNotes CeriumNotes-${VERSION}
         tar -czf CeriumNotes-${VERSION}.tar.gz CeriumNotes-${VERSION}
+        echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}.tar.gz" >> $GITHUB_ENV
 
     - name: Package (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        $VERSION = (cmake -LA build | Select-String "APP_VERSION_STR:STRING").ToString().Split('=')[1]
+        $VERSION = Get-Content VERSION.txt -Raw
+        $VERSION = $VERSION.Trim()
         Copy-Item build/CNotes.exe -Destination CeriumNotes-$VERSION.exe
         Compress-Archive -Path CeriumNotes-$VERSION.exe -DestinationPath CeriumNotes-$VERSION.zip
+        echo "RELEASE_ARTIFACT=CeriumNotes-$VERSION.zip" >> $env:GITHUB_ENV
 
     - name: Package (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        VERSION=$(cmake -LA build | grep "APP_VERSION_STR:STRING" | cut -d'=' -f2)
+        VERSION=$(cat VERSION.txt | tr -d '\n')
         mv build/CNotes.app CeriumNotes-${VERSION}.app
         zip -r CeriumNotes-${VERSION}-macOS.zip CeriumNotes-${VERSION}.app
+        echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}-macOS.zip" >> $GITHUB_ENV
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -105,14 +109,14 @@ jobs:
     - name: Install MuPDF for Android
       run: |
         mkdir -p third_party/mupdf
-        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-android-lib.zip -o mupdf-android.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-android-lib.zip -o mupdf-android.zip
         unzip mupdf-android.zip -d third_party/mupdf
         mv third_party/mupdf/mupdf-1.23.11-android-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.2'
+        version: '6.7.3'
         target: 'android'
         arch: 'android_arm64_v8a'
 
@@ -152,7 +156,7 @@ jobs:
     - name: Install MuPDF for iOS
       run: |
         mkdir -p third_party/mupdf
-        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-ios-lib.zip -o mupdf-ios.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-ios-lib.zip -o mupdf-ios.zip
         unzip mupdf-ios.zip -d third_party/mupdf
         mv third_party/mupdf/mupdf-1.23.11-ios-lib/* third_party/mupdf/
 
