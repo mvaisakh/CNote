@@ -88,6 +88,7 @@ bool ExportEngine::exportPdf(const QString &sourcePdf,
         fz_output *out = fz_new_output_with_path(ctx, targetPdf.toLocal8Bit().constData(), 0);
         fz_try(ctx) {
             pdf_write_document(ctx, out_doc, out, &pdf_default_write_options);
+            fz_close_output(ctx, out);
         }
         fz_always(ctx) {
             fz_drop_output(ctx, out);
