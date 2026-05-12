@@ -6,7 +6,7 @@ import Qt5Compat.GraphicalEffects
 import CNote.Core
 
 Item {
-    id: root
+    id: toolbarRoot
     height: 64
     property int radius: 32
     
@@ -20,10 +20,10 @@ Item {
         sourceItem: canvas
         sourceRect: {
             if (!canvas) return Qt.rect(0, 0, 0, 0);
-            var pos = root.mapToItem(canvas, 0, 0);
-            return Qt.rect(pos.x, pos.y, root.width, root.height);
+            var pos = toolbarRoot.mapToItem(canvas, 0, 0);
+            return Qt.rect(pos.x, pos.y, toolbarRoot.width, toolbarRoot.height);
         }
-        anchors.fill: root
+        anchors.fill: toolbarRoot
         visible: false
         live: true
         recursive: true
@@ -32,7 +32,7 @@ Item {
     // Glass Background
     Rectangle {
         anchors.fill: parent
-        radius: root.radius
+        radius: toolbarRoot.radius
         color: "#441C1B1F"
         border.color: "#33FFFFFF"
         border.width: 1
@@ -50,7 +50,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: root.radius - 1
+            radius: toolbarRoot.radius - 1
             color: "transparent"
             border.color: "#22FFFFFF"
             border.width: 1
@@ -65,7 +65,7 @@ Item {
 
         Button {
             id: backButton
-            onClicked: root.backRequested()
+            onClicked: toolbarRoot.backRequested()
             background: Rectangle {
                 implicitWidth: 44
                 implicitHeight: 44
@@ -171,7 +171,7 @@ Item {
 
         Button {
             id: exportBtn
-            onClicked: root.exportRequested()
+            onClicked: toolbarRoot.exportRequested()
             background: Rectangle {
                 implicitWidth: 44
                 implicitHeight: 44
