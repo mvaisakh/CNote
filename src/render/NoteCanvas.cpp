@@ -13,11 +13,22 @@ NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent)
 
 NoteCanvas::~NoteCanvas() {}
 
+#include <QFileInfo>
+#include <QDebug>
+
 void NoteCanvas::setPdfPath(const QString& path)
 {
     if (m_pdfPath == path) return;
     m_pdfPath = path;
-    m_pdfEngine.loadDocument(path.toStdString());
+    
+    QFileInfo checkFile(path);
+    if (checkFile.exists() && checkFile.isFile()) {
+        qDebug() << "NoteCanvas: Loading PDF:" << path;
+        m_pdfEngine.loadDocument(path.toStdString());
+    } else {
+        qWarning() << "NoteCanvas: PDF file does not exist or is not a file:" << path;
+    }
+    
     m_pdfDirty = true;
     emit pdfPathChanged();
     update();
