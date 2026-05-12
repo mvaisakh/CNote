@@ -25,6 +25,9 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             target_arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            target_arch: arm64
           - os: windows-latest
             platform: windows
             target_arch: x64
@@ -41,7 +44,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libmupdf-dev libgl1-mesa-dev libxkbcommon-dev
+        sudo apt-get install -y libgl1-mesa-dev libxkbcommon-dev
+        if [ "${{ matrix.target_arch }}" = "arm64" ]; then
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        else
+          sudo apt-get install -y libmupdf-dev
+        fi
 
     - name: Cache MuPDF (macOS)
       id: cache-mupdf-macos
@@ -67,7 +75,18 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v2
 
-    - name: Cache MuPDF
+    - name: Build MuPDF (Linux Source)
+      if: matrix.os == 'ubuntu-latest' && matrix.target_arch == 'arm64'
+      run: |
+        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+        tar -xzf mupdf.tar.gz
+        cd mupdf-1.27.2-source
+        make -j$(nproc) HAVE_X11=no HAVE_GLUT=no CC=aarch64-linux-gnu-gcc
+        cd ..
+        mkdir -p third_party/mupdf/include
+        mkdir -p third_party/mupdf/lib
+        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+        cp mupdf-1.27.2-source/build/release/libmupdf.a third_party/mupdf/lib/
       id: cache-mupdf
       uses: actions/cache@v4
       with:
@@ -95,7 +114,7 @@ jobs:
         version: '6.7.3'
         host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
         target: 'desktop'
-        arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || 'gcc_64' }}
+        arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'gcc_64') }}
 
     - name: Configure CMake
       run: |
