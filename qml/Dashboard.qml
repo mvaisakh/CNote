@@ -83,8 +83,8 @@ Rectangle {
                     implicitHeight: 44
                     Image {
                         anchors.centerIn: parent
-                        width: 22
-                        height: 22
+                        width: 28
+                        height: 28
                         source: "qrc:/CeriumNotes/icons/add.svg"
                         sourceSize: Qt.size(64, 64)
                         fillMode: Image.PreserveAspectFit

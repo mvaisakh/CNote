@@ -34,8 +34,8 @@ Rectangle {
                 implicitHeight: 44
                 Image {
                     anchors.centerIn: parent
-                    width: 22
-                    height: 22
+                    width: 28
+                    height: 28
                     source: "qrc:/CeriumNotes/icons/back.svg"
                     sourceSize: Qt.size(64, 64)
                     fillMode: Image.PreserveAspectFit
@@ -79,8 +79,8 @@ Rectangle {
                         implicitHeight: 44
                         Image {
                             anchors.centerIn: parent
-                            width: 22
-                            height: 22
+                            width: 28
+                            height: 28
                             source: "qrc:/CeriumNotes/icons/" + modelData.icon
                             sourceSize: Qt.size(64, 64)
                             fillMode: Image.PreserveAspectFit
@@ -113,8 +113,8 @@ Rectangle {
                 implicitHeight: 44
                 Image {
                     anchors.centerIn: parent
-                    width: 22
-                    height: 22
+                    width: 28
+                    height: 28
                     source: "qrc:/CeriumNotes/icons/export.svg"
                     sourceSize: Qt.size(64, 64)
                     fillMode: Image.PreserveAspectFit
