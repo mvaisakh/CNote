@@ -41,10 +41,20 @@ Window {
         title: "Export Annotated PDF"
         fileMode: FileDialog.SaveFile
         nameFilters: ["PDF files (*.pdf)"]
+        defaultSuffix: "pdf"
         onAccepted: {
             if (stackView.depth > 1) {
-                stackView.currentItem.canvas.exportCurrentPdf(selectedFile)
+                stackView.currentItem.canvas.exportCurrentPdf(exportDialog.selectedFile)
             }
+        }
+    }
+
+    function openExport() {
+        if (stackView.depth > 1) {
+            var currentPath = stackView.currentItem.canvas.pdfPath
+            var fileName = currentPath.split('/').pop().replace(".pdf", "_Annotated.pdf")
+            exportDialog.currentFile = "file://" + fileManager.getStoragePath() + "/" + fileName
+            exportDialog.open()
         }
     }
 
@@ -86,7 +96,7 @@ Window {
                     dashboard.refresh()
                 }
                 
-                onExportRequested: exportDialog.open()
+                onExportRequested: root.openExport()
             }
 
             NoteCanvas {
