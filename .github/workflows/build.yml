@@ -120,14 +120,28 @@ jobs:
           $LIB_DIR = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
           Copy-Item -Path mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
 
-      - name: Install Qt
-        if: matrix.platform != 'linux' || matrix.target_arch != 'arm64'
+      - name: Install Qt (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m pip install aqtinstall
+          if ("${{ matrix.target_arch }}" -eq "arm64") {
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir ${{ runner.workspace }}/Qt
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64_cross_compiled --outputdir ${{ runner.workspace }}/Qt
+            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_arm64" >> $env:GITHUB_ENV
+          } else {
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir ${{ runner.workspace }}/Qt
+            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" >> $env:GITHUB_ENV
+          }
+        shell: pwsh
+
+      - name: Install Qt (Other)
+        if: matrix.os != 'windows-latest' && (matrix.platform != 'linux' || matrix.target_arch != 'arm64')
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.8.0'
-          host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
+          host: ${{ matrix.os == 'macos-latest' && 'mac' || 'linux' }}
           target: 'desktop'
-          arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2022_arm64_cross_compiled' || 'win64_msvc2022_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'linux_gcc_64') }}
+          arch: ${{ matrix.os == 'macos-latest' && 'clang_64' || 'linux_gcc_64' }}
 
       - name: Install Qt (Linux ARM64 Apt)
         if: matrix.platform == 'linux' && matrix.target_arch == 'arm64'
