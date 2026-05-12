@@ -135,7 +135,7 @@ jobs:
         shell: pwsh
 
       - name: Install Qt (Other)
-        if: matrix.os != 'windows-latest' && (matrix.platform != 'linux' || matrix.target_arch != 'arm64')
+        if: matrix.os != 'windows-latest' && matrix.platform != 'linux'
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.8.0'
