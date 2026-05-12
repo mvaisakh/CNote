@@ -24,6 +24,8 @@ qt_add_qml_module(CNotes
     VERSION 1.0
     QML_FILES
         qml/main.qml
+        qml/Toolbar.qml
+        qml/Sidebar.qml
     SOURCES
         src/render/NoteCanvas.h
         src/render/NoteCanvas.cpp

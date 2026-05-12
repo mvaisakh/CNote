@@ -5,22 +5,44 @@ import QtQuick.Controls
 import CeriumNotes
 
 Window {
-    width: 1024
-    height: 768
+    width: 1280
+    height: 800
     visible: true
     title: qsTr("CeriumNotes")
+    color: "#121212"
 
-    NoteCanvas {
-        id: canvas
+    Row {
         anchors.fill: parent
-    }
 
-    Text {
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.margins: 20
-        text: qsTr("CeriumNotes GPU Engine")
-        color: "#55ffffff"
-        font.pixelSize: 16
+        Sidebar {
+            height: parent.height
+        }
+
+        Item {
+            width: parent.width - 250
+            height: parent.height
+
+            NoteCanvas {
+                id: canvas
+                anchors.fill: parent
+                pdfPath: "" // Load later
+            }
+
+            Toolbar {
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.topMargin: 20
+                width: parent.width * 0.7
+            }
+
+            Text {
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.margins: 10
+                text: qsTr("CeriumNotes Spatial Engine")
+                color: "#33ffffff"
+                font.pixelSize: 12
+            }
+        }
     }
 }
