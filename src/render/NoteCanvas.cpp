@@ -25,39 +25,88 @@ void NoteCanvas::setPdfPath(const QString& path)
 
 void NoteCanvas::mousePressEvent(QMouseEvent *event)
 {
-    m_activePoints.clear();
-    InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
-    m_activePoints.push_back(p);
-    m_activeStrokeDirty = true;
-    update();
+    if (event->source() == Qt::MouseEventNotSynthesized) {
+        m_activePoints.clear();
+        InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
+        m_activePoints.push_back(p);
+        m_activeStrokeDirty = true;
+        update();
+    }
 }
 
 void NoteCanvas::mouseMoveEvent(QMouseEvent *event)
 {
-    InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
-    m_activePoints.push_back(p);
-    m_activeStrokeDirty = true;
-    update();
+    if (event->source() == Qt::MouseEventNotSynthesized) {
+        InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
+        m_activePoints.push_back(p);
+        m_activeStrokeDirty = true;
+        update();
+    }
 }
 
 void NoteCanvas::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (!m_activePoints.empty()) {
-        Stroke s;
-        s.points = m_activePoints;
-        s.color = Qt::white;
-        s.width = 2.0f;
-        m_finishedStrokes.push_back(s);
+    if (event->source() == Qt::MouseEventNotSynthesized) {
+        if (!m_activePoints.empty()) {
+            Stroke s;
+            s.points = m_activePoints;
+            s.color = Qt::white;
+            s.width = 2.0f;
+            m_finishedStrokes.push_back(s);
+        }
+        m_activePoints.clear();
+        m_activeStrokeDirty = true;
+        m_strokesDirty = true;
+        update();
     }
-    m_activePoints.clear();
-    m_activeStrokeDirty = true;
-    m_strokesDirty = true;
-    update();
+}
+
+#include <QTabletEvent>
+
+bool NoteCanvas::event(QEvent *event)
+{
+    if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletMove || event->type() == QEvent::TabletRelease) {
+        QTabletEvent *tablet = static_cast<QTabletEvent *>(event);
+        switch (event->type()) {
+        case QEvent::TabletPress:
+            m_activePoints.clear();
+            [[fallthrough]];
+        case QEvent::TabletMove: {
+            InkPoint p = { 
+                (float)tablet->position().x(), 
+                (float)tablet->position().y(), 
+                (float)tablet->pressure(), 
+                (float)tablet->xTilt(), 
+                (long long)tablet->timestamp() 
+            };
+            m_activePoints.push_back(p);
+            m_activeStrokeDirty = true;
+            update();
+            break;
+        }
+        case QEvent::TabletRelease:
+            if (!m_activePoints.empty()) {
+                Stroke s;
+                s.points = m_activePoints;
+                s.color = Qt::white;
+                s.width = 2.0f;
+                m_finishedStrokes.push_back(s);
+            }
+            m_activePoints.clear();
+            m_activeStrokeDirty = true;
+            m_strokesDirty = true;
+            update();
+            break;
+        default:
+            break;
+        }
+        return true;
+    }
+    return QQuickItem::event(event);
 }
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
 {
-    // Placeholder for touch handling
     QQuickItem::touchEvent(event);
 }
 
