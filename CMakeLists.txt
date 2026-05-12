@@ -80,43 +80,42 @@ endif()
 if(ENABLE_PDF)
     set(MUPDF_FOUND FALSE)
     
-    # 1. Check for vendored MuPDF in third_party
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf")
-        set(MUPDF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include")
-        set(MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/libmupdf.a") 
-        set(MUPDF_FOUND TRUE)
-    endif()
-
-    # 2. Platform-specific fallbacks
-    if(NOT MUPDF_FOUND AND NOT ANDROID)
+    # 1. Try PkgConfig first (common for Linux system installs)
+    if(NOT ANDROID AND NOT IOS AND NOT WIN32)
         find_package(PkgConfig QUIET)
         if(PKG_CONFIG_FOUND)
             pkg_check_modules(MUPDF mupdf)
+            if(MUPDF_FOUND)
+                message(STATUS "MuPDF found via pkg-config")
+            endif()
         endif()
     endif()
 
-    # Prioritize local third_party build for CI/CD consistency
-    find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
-        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/include
-        NO_CACHE)
-    
-    if(MUPDF_INCLUDE_DIR)
-        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
-        # Link all static libraries found in the local lib directory
-        if(WIN32)
-            file(GLOB MUPDF_LIBRARIES "${CMAKE_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
-        else()
-            file(GLOB MUPDF_LIBRARIES "${CMAKE_SOURCE_DIR}/third_party/mupdf/lib/*.a")
-        endif()
-        
-        if(MUPDF_LIBRARIES)
-            set(MUPDF_FOUND TRUE)
-            add_definitions(-DENABLE_PDF)
-            message(STATUS "PDF support enabled (local build)")
-        endif()
-    endif()
-
+    # 2. Fallback to third_party discovery
     if(NOT MUPDF_FOUND)
+        find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
+            PATHS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include
+            NO_DEFAULT_PATH)
+        
+        if(MUPDF_INCLUDE_DIR)
+            set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
+            if(WIN32)
+                file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
+            else()
+                file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.a")
+            endif()
+            
+            if(MUPDF_LIBRARIES)
+                set(MUPDF_FOUND TRUE)
+                message(STATUS "MuPDF found in third_party")
+            endif()
+        endif()
+    endif()
+
+    if(MUPDF_FOUND)
+        add_definitions(-DENABLE_PDF)
+        message(STATUS "PDF support enabled")
+    else()
         message(WARNING "MuPDF not found; PDF support disabled")
         set(ENABLE_PDF OFF)
     endif()
