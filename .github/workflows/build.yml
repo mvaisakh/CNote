@@ -25,7 +25,7 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             target_arch: x64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             platform: linux
             target_arch: arm64
           - os: windows-latest
@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq libgl1-mesa-dev libxkbcommon-dev
@@ -131,12 +131,19 @@ jobs:
           Copy-Item -Path mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
 
       - name: Install Qt
+        if: matrix.platform != 'linux' || matrix.target_arch != 'arm64'
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.8.0'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
           target: 'desktop'
           arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'linux_gcc_64') }}
+
+      - name: Install Qt (Linux ARM64 Apt)
+        if: matrix.platform == 'linux' && matrix.target_arch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-quick-dev qt6-qml-dev
 
       - name: Configure CMake
         run: |
