@@ -179,25 +179,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Cache MuPDF (iOS)
-      id: cache-mupdf-ios
-      uses: actions/cache@v4
-      with:
-        path: third_party/mupdf
-        key: ios-mupdf-1.27.2
-
-    - name: Build MuPDF (iOS)
-      if: steps.cache-mupdf-ios.outputs.cache-hit != 'true'
+    - name: Install MuPDF (iOS)
       run: |
-        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
-        tar -xzf mupdf.tar.gz
-        cd mupdf-1.27.2-source
-        xcodebuild -project platform/ios/mupdf.xcodeproj -scheme libmupdf -configuration Release -sdk iphoneos ARCHS=arm64
-        cd ..
-        mkdir -p third_party/mupdf/include
-        mkdir -p third_party/mupdf/lib
-        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-        cp mupdf-1.27.2-source/platform/ios/build/Release-iphoneos/libmupdf.a third_party/mupdf/lib/
+        pod init
+        echo "pod 'mupdf'" >> Podfile
+        pod install --repo-update
+        # Note: We'll need to point CMake to the Pods headers/libs
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
