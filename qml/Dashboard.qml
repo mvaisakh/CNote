@@ -106,7 +106,7 @@ Rectangle {
                         anchors.centerIn: parent
                         width: 28
                         height: 28
-                        source: "qrc:/CeriumNotes/icons/add.svg"
+                        source: "qrc:/CNote/Core/icons/add.svg"
                         sourceSize: Qt.size(64, 64)
                         smooth: true
                         opacity: newNoteBtn.hovered ? 1.0 : 0.8
