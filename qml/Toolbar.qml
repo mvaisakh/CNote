@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import CeriumNotes.Core
 
 Rectangle {
     id: root

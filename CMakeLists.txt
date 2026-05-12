@@ -137,7 +137,7 @@ set_target_properties(CNotes PROPERTIES
 target_link_options(CNotes PRIVATE -rdynamic)
 
 qt_add_qml_module(CNotes
-    URI CeriumNotes
+    URI CeriumNotes.Core
     VERSION 1.0
     QML_FILES
         qml/main.qml
@@ -192,6 +192,6 @@ target_include_directories(TestInk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Optimization flags placeholder
 # if(CMAKE_BUILD_TYPE STREQUAL "Release")
-#     target_compile_options(CeriumNotes PRIVATE -O3 -flto)
-#     target_link_options(CeriumNotes PRIVATE -flto)
+#     target_compile_options(CNotes PRIVATE -O3 -flto)
+#     target_link_options(CNotes PRIVATE -flto)
 # endif()
