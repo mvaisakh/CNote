@@ -24,8 +24,13 @@ jobs:
             target_arch: x86_64
           - os: ubuntu-latest
             platform: linux
+            target_arch: x64
           - os: windows-latest
             platform: windows
+            target_arch: x64
+          - os: windows-latest
+            platform: windows
+            target_arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -75,20 +80,22 @@ jobs:
         curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
         tar -xzf mupdf.tar.gz
         cd mupdf-1.27.2-source
-        msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=x64
+        $MS_PLATFORM = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
+        msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM
         cd ..
         New-Item -ItemType Directory -Force -Path third_party/mupdf/include
         New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
         Copy-Item -Path mupdf-1.27.2-source/include/* -Destination third_party/mupdf/include/ -Recurse
-        Copy-Item -Path mupdf-1.27.2-source/platform/win32/x64/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
+        $LIB_DIR = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
+        Copy-Item -Path mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.8.0'
+        version: '6.7.3'
         host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
         target: 'desktop'
-        arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2019_64' || matrix.os == 'macos-latest' && 'clang_64' || 'gcc_64' }}
+        arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || 'gcc_64' }}
 
     - name: Configure CMake
       run: |
