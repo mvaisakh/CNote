@@ -67,22 +67,53 @@ bool NoteCanvas::event(QEvent *event)
             pos = me->position();
         }
         
-        InkPoint p = { (float)pos.x(), (float)pos.y(), pressure, 0.0f, 0 };
-        m_activePoints.push_back(p);
-        m_activeStrokeDirty = true;
-        update();
+        if (m_currentTool == Eraser) {
+            bool changed = false;
+            auto it = m_finishedStrokes.begin();
+            while (it != m_finishedStrokes.end()) {
+                bool hit = false;
+                for (const auto& p : it->points) {
+                    float dx = p.x - pos.x();
+                    float dy = p.y - pos.y();
+                    if (dx*dx + dy*dy < 20*20) { // 20px eraser radius
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) {
+                    it = m_finishedStrokes.erase(it);
+                    changed = true;
+                } else {
+                    ++it;
+                }
+            }
+            if (changed) {
+                m_strokesDirty = true;
+                update();
+            }
+        } else {
+            InkPoint p = { (float)pos.x(), (float)pos.y(), pressure, 0.0f, 0 };
+            m_activePoints.push_back(p);
+            m_activeStrokeDirty = true;
+            update();
+        }
         return true;
     } else if (event->type() == QEvent::TabletRelease || event->type() == QEvent::MouseButtonRelease) {
-        if (!m_activePoints.empty()) {
+        if (m_currentTool != Eraser && !m_activePoints.empty()) {
             Stroke s;
             s.points = m_activePoints;
             s.color = m_penColor;
-            s.width = (m_currentTool == Highlighter) ? 15.0f : 2.0f;
+            if (m_currentTool == Highlighter) {
+                s.color.setAlphaF(0.4);
+                s.width = 15.0f;
+            } else {
+                s.width = 2.0f;
+            }
             m_finishedStrokes.push_back(s);
+            m_strokesDirty = true;
         }
         m_activePoints.clear();
         m_activeStrokeDirty = true;
-        m_strokesDirty = true;
         update();
         return true;
     }
@@ -129,22 +160,32 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     // 1. Update PDF Background
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
         CN_TRACE("Updating PDF Background texture...");
-        QImage img = m_pdfEngine.renderTile(0, 0, 0, m_renderSize.width(), m_renderSize.height(), 1.0f);
-        if (!img.isNull()) {
-            QSGTexture *texture = window()->createTextureFromImage(img);
-            if (texture) {
-                // Safely clear old PDF nodes
-                while (pdfLayer->childCount() > 0) {
-                    QSGNode *n = pdfLayer->childAtIndex(0);
-                    pdfLayer->removeChildNode(n);
-                    delete n;
+        
+        QSizeF pageSize = m_pdfEngine.pageSize(0);
+        if (!pageSize.isEmpty()) {
+            float scale = std::min(m_renderSize.width() / pageSize.width(), 
+                                   m_renderSize.height() / pageSize.height());
+            int targetW = pageSize.width() * scale;
+            int targetH = pageSize.height() * scale;
+            int offsetX = (m_renderSize.width() - targetW) / 2;
+            int offsetY = (m_renderSize.height() - targetH) / 2;
+
+            QImage img = m_pdfEngine.renderTile(0, 0, 0, targetW, targetH, scale);
+            if (!img.isNull()) {
+                QSGTexture *texture = window()->createTextureFromImage(img);
+                if (texture) {
+                    while (pdfLayer->childCount() > 0) {
+                        QSGNode *n = pdfLayer->childAtIndex(0);
+                        pdfLayer->removeChildNode(n);
+                        delete n;
+                    }
+                    
+                    QSGSimpleTextureNode *node = new QSGSimpleTextureNode();
+                    node->setOwnsTexture(true);
+                    node->setTexture(texture);
+                    node->setRect(offsetX, offsetY, targetW, targetH);
+                    pdfLayer->appendChildNode(node);
                 }
-                
-                QSGSimpleTextureNode *node = new QSGSimpleTextureNode();
-                node->setOwnsTexture(true);
-                node->setTexture(texture);
-                node->setRect(0, 0, m_renderSize.width(), m_renderSize.height());
-                pdfLayer->appendChildNode(node);
             }
         }
         m_pdfDirty = false;
@@ -165,7 +206,8 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
             QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
             geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geo->setLineWidth(m_currentTool == Highlighter ? 15.0f : 3.0f);
+            float activeWidth = m_currentTool == Highlighter ? 15.0f : 3.0f;
+            geo->setLineWidth(activeWidth);
             
             QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
             for (size_t i = 0; i < m_activePoints.size(); ++i) {
@@ -174,7 +216,9 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             node->setGeometry(geo);
 
             QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-            mat->setColor(m_penColor);
+            QColor activeColor = m_penColor;
+            if (m_currentTool == Highlighter) activeColor.setAlphaF(0.4);
+            mat->setColor(activeColor);
             mat->setFlag(QSGMaterial::Blending, true);
             node->setMaterial(mat);
 

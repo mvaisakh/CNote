@@ -16,12 +16,8 @@ Window {
     Row {
         anchors.fill: parent
 
-        Sidebar {
-            height: parent.height
-        }
-
         Item {
-            width: parent.width - 250
+            width: parent.width
             height: parent.height
 
             NoteCanvas {
