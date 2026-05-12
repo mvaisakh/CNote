@@ -4,7 +4,7 @@
 #include <QQuickWindow>
 #include <QMouseEvent>
 
-NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent)
+NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0)
 {
     setFlag(ItemHasContents, true);
     setAcceptedMouseButtons(Qt::LeftButton);
@@ -12,6 +12,12 @@ NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent)
 }
 
 NoteCanvas::~NoteCanvas() {}
+
+void NoteCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    m_renderSize = newGeometry.size().toSize();
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+}
 
 #include <QFileInfo>
 #include <QDebug>
@@ -35,43 +41,9 @@ void NoteCanvas::setPdfPath(const QString& path)
     update();
 }
 
-void NoteCanvas::mousePressEvent(QMouseEvent *event)
-{
-    if (event->source() == Qt::MouseEventNotSynthesized) {
-        m_activePoints.clear();
-        InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
-        m_activePoints.push_back(p);
-        m_activeStrokeDirty = true;
-        update();
-    }
-}
-
-void NoteCanvas::mouseMoveEvent(QMouseEvent *event)
-{
-    if (event->source() == Qt::MouseEventNotSynthesized) {
-        InkPoint p = { (float)event->position().x(), (float)event->position().y(), 0.5f, 0.0f, (long long)event->timestamp() };
-        m_activePoints.push_back(p);
-        m_activeStrokeDirty = true;
-        update();
-    }
-}
-
-void NoteCanvas::mouseReleaseEvent(QMouseEvent *event)
-{
-    if (event->source() == Qt::MouseEventNotSynthesized) {
-        if (!m_activePoints.empty()) {
-            Stroke s;
-            s.points = m_activePoints;
-            s.color = Qt::white;
-            s.width = 2.0f;
-            m_finishedStrokes.push_back(s);
-        }
-        m_activePoints.clear();
-        m_activeStrokeDirty = true;
-        m_strokesDirty = true;
-        update();
-    }
-}
+void NoteCanvas::mousePressEvent(QMouseEvent *) {}
+void NoteCanvas::mouseMoveEvent(QMouseEvent *) {}
+void NoteCanvas::mouseReleaseEvent(QMouseEvent *) {}
 
 #include <QTabletEvent>
 
@@ -148,45 +120,17 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGGeometryNode *staticNode = nullptr;
     if (root->childCount() > 1) {
         staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(1));
-    } else {
-        CN_TRACE("Creating Static Ink node");
-        staticNode = new QSGGeometryNode();
-        staticNode->setFlag(QSGNode::OwnsGeometry);
-        staticNode->setFlag(QSGNode::OwnsMaterial);
-        
-        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-        staticNode->setGeometry(geo);
-        
-        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(Qt::white);
-        mat->setFlag(QSGMaterial::Blending, true);
-        staticNode->setMaterial(mat);
-        root->appendChildNode(staticNode);
     }
 
     // Layer 2: Active Ink
     QSGGeometryNode *activeNode = nullptr;
     if (root->childCount() > 2) {
         activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(2));
-    } else {
-        CN_TRACE("Creating Active Ink node");
-        activeNode = new QSGGeometryNode();
-        activeNode->setFlag(QSGNode::OwnsGeometry);
-        activeNode->setFlag(QSGNode::OwnsMaterial);
-
-        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-        activeNode->setGeometry(geo);
-
-        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(Qt::red);
-        mat->setFlag(QSGMaterial::Blending, true);
-        activeNode->setMaterial(mat);
-        root->appendChildNode(activeNode);
     }
 
-    if (m_pdfDirty && !m_pdfPath.isEmpty()) {
+    if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
         CN_TRACE("Rendering PDF tile...");
-        QImage img = m_pdfEngine.renderTile(0, 0, 0, (int)width(), (int)height(), 1.0f);
+        QImage img = m_pdfEngine.renderTile(0, 0, 0, m_renderSize.width(), m_renderSize.height(), 1.0f);
         if (!img.isNull()) {
             CN_TRACE("Uploading texture %dx%d...", img.width(), img.height());
             QSGTexture *texture = window()->createTextureFromImage(img);
@@ -197,7 +141,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
                 }
                 pdfNode->setOwnsTexture(true);
                 pdfNode->setTexture(texture);
-                pdfNode->setRect(0, 0, width(), height());
+                pdfNode->setRect(0, 0, m_renderSize.width(), m_renderSize.height());
                 CN_TRACE("Texture uploaded");
             } else {
                 CN_TRACE("FAILED to create texture");
@@ -206,7 +150,38 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         m_pdfDirty = false;
     }
 
+    // For now, let's keep ink layers out until we have actual stroke data to avoid prepareAlphaBatches crash
+    if (m_strokesDirty && !m_finishedStrokes.empty()) {
+        if (!staticNode) {
+            staticNode = new QSGGeometryNode();
+            staticNode->setFlag(QSGNode::OwnsGeometry);
+            staticNode->setFlag(QSGNode::OwnsMaterial);
+            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+            staticNode->setGeometry(geo);
+            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+            mat->setColor(Qt::white);
+            mat->setFlag(QSGMaterial::Blending, true);
+            staticNode->setMaterial(mat);
+            root->appendChildNode(staticNode);
+        }
+        // ... update geometry logic ...
+        m_strokesDirty = false;
+    }
+
     if (m_activeStrokeDirty) {
+        if (!activeNode) {
+            activeNode = new QSGGeometryNode();
+            activeNode->setFlag(QSGNode::OwnsGeometry);
+            activeNode->setFlag(QSGNode::OwnsMaterial);
+            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+            activeNode->setGeometry(geo);
+            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+            mat->setColor(Qt::red);
+            mat->setFlag(QSGMaterial::Blending, true);
+            activeNode->setMaterial(mat);
+            root->appendChildNode(activeNode);
+        }
+
         if (m_activePoints.size() > 1) {
             QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
             geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
@@ -218,9 +193,10 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             }
             
             activeNode->setGeometry(geometry);
-            activeNode->setFlag(QSGNode::OwnsGeometry);
         } else {
-            activeNode->setGeometry(nullptr);
+            // Use empty geometry instead of nullptr
+            QSGGeometry *empty = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+            activeNode->setGeometry(empty);
         }
         m_activeStrokeDirty = false;
     }

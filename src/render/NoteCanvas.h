@@ -25,6 +25,7 @@ signals:
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
+    void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
     bool event(QEvent *event) override;
     void touchEvent(QTouchEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -41,6 +42,7 @@ private:
     bool m_pdfDirty = false;
     bool m_strokesDirty = false;
     bool m_activeStrokeDirty = false;
+    QSize m_renderSize;
 
     void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points);
 };
