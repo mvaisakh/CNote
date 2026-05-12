@@ -10,11 +10,31 @@ Rectangle {
     opacity: 0.95
     
     property var canvas
+    signal openRequested()
 
     RowLayout {
         anchors.fill: parent
         anchors.margins: 10
         spacing: 20
+
+        // Open Button
+        Item {
+            width: 40; height: 40
+            Rectangle {
+                anchors.fill: parent
+                radius: 20
+                color: "#2a2a2a"
+                border.color: "#3a3a3a"
+                Text {
+                    anchors.centerIn: parent
+                    text: "📂"
+                    font.pixelSize: 18
+                }
+            }
+            TapHandler {
+                onTapped: openRequested()
+            }
+        }
 
         Button {
             text: "Pen"

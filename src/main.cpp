@@ -1,12 +1,15 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QIcon>
-#include "CrashHandler.h"
+#include "core/CrashHandler.h"
+#include "core/FileManager.h"
 
 int main(int argc, char *argv[])
 {
     Cerium::setupCrashHandler();
     QGuiApplication app(argc, argv);
+
+    qmlRegisterType<FileManager>("CeriumNotes", 1, 0, "FileManager");
 
     app.setApplicationName("CeriumNotes");
     app.setOrganizationName("CeriumNotes");

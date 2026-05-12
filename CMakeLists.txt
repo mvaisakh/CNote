@@ -18,6 +18,7 @@ qt_add_executable(CNotes
     src/pdf/PdfEngine.cpp
     src/ink/InkProcessor.cpp
     src/core/CrashHandler.cpp
+    src/core/FileManager.cpp
 )
 
 target_link_options(CNotes PRIVATE -rdynamic)
