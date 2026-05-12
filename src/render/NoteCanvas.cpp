@@ -155,10 +155,15 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else {
         CN_TRACE("Creating Static Ink node");
         staticNode = new QSGGeometryNode();
+        staticNode->setFlag(QSGNode::OwnsGeometry);
+        staticNode->setFlag(QSGNode::OwnsMaterial);
+        
+        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+        staticNode->setGeometry(geo);
+        
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::white);
         staticNode->setMaterial(mat);
-        staticNode->material()->setFlag(QSGMaterial::Blending, true);
         root->appendChildNode(staticNode);
     }
 
@@ -169,10 +174,15 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else {
         CN_TRACE("Creating Active Ink node");
         activeNode = new QSGGeometryNode();
+        activeNode->setFlag(QSGNode::OwnsGeometry);
+        activeNode->setFlag(QSGNode::OwnsMaterial);
+
+        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+        activeNode->setGeometry(geo);
+
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::red);
         activeNode->setMaterial(mat);
-        activeNode->material()->setFlag(QSGMaterial::Blending, true);
         root->appendChildNode(activeNode);
     }
 
