@@ -3,8 +3,11 @@
 #include <QSGFlatColorMaterial>
 #include <QQuickWindow>
 #include <QMouseEvent>
+#include <QPointingDevice>
 #include <QMatrix4x4>
+#include <cmath>
 #include <QSGTransformNode>
+#include <QElapsedTimer>
 #include "core/Trace.h"
 #include "core/PersistenceManager.h"
 
@@ -54,9 +57,19 @@ QSGGeometryNode* NoteCanvas::createStrokeNode(const Stroke& s)
         }
 
         float pressure = s.points[i].pressure;
-        // Ensure some minimum width even for light touches
-        float halfWidth = (s.width * (0.2f + pressure * 0.8f)) / 2.0f;
-
+        
+        float velocity = 0;
+        if (i > 0) {
+            float dx = s.points[i].x - s.points[i-1].x;
+            float dy = s.points[i].y - s.points[i-1].y;
+            long long dt = s.points[i].timestamp - s.points[i-1].timestamp;
+            if (dt > 0) velocity = std::sqrt(dx*dx + dy*dy) / dt;
+        }
+        
+        // Dynamic width: pressure (90% range) + velocity tapering (up to 30% reduction)
+        float velocityFactor = std::max(0.7f, 1.0f - (velocity / 15.0f));
+        float halfWidth = (s.width * (0.1f + pressure * 0.9f) * velocityFactor) / 2.0f;
+        
         v[i*2].set(p.x() + normal.x() * halfWidth, p.y() + normal.y() * halfWidth);
         v[i*2+1].set(p.x() - normal.x() * halfWidth, p.y() - normal.y() * halfWidth);
     }
@@ -107,8 +120,17 @@ void NoteCanvas::updateGeometry(QSGGeometry *geometry, const std::vector<InkPoin
         }
 
         float pressure = points[i].pressure;
-        float halfWidth = (baseWidth * (0.2f + pressure * 0.8f)) / 2.0f;
-
+        float velocity = 0;
+        if (i > 0) {
+            float dx = points[i].x - points[i-1].x;
+            float dy = points[i].y - points[i-1].y;
+            long long dt = points[i].timestamp - points[i-1].timestamp;
+            if (dt > 0) velocity = std::sqrt(dx*dx + dy*dy) / dt;
+        }
+        
+        float velocityFactor = std::max(0.7f, 1.0f - (velocity / 15.0f));
+        float halfWidth = (baseWidth * (0.1f + pressure * 0.9f) * velocityFactor) / 2.0f;
+ 
         v[i*2].set(p.x() + normal.x() * halfWidth, p.y() + normal.y() * halfWidth);
         v[i*2+1].set(p.x() - normal.x() * halfWidth, p.y() - normal.y() * halfWidth);
     }
@@ -167,25 +189,48 @@ void NoteCanvas::mouseReleaseEvent(QMouseEvent *) {}
 bool NoteCanvas::event(QEvent *event)
 {
     if (event->type() == QEvent::TabletPress || event->type() == QEvent::MouseButtonPress) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            m_lastMousePos = static_cast<QMouseEvent*>(event)->position();
+        QSinglePointEvent *spe = static_cast<QSinglePointEvent*>(event);
+        QPointingDevice::PointerType ptype = spe->pointingDevice()->pointerType();
+        
+        // Let Finger events flow to touchEvent()
+        if (ptype == QPointingDevice::PointerType::Finger) {
+            return QQuickItem::event(event);
         }
+
+        float pressure = spe->point(0).pressure();
+        if (pressure <= 0.0f || std::isnan(pressure)) pressure = 0.5f;
+        QPointF pos = spe->position();
+
+        if (event->type() == QEvent::MouseButtonPress) {
+            m_lastMousePos = pos;
+        }
+
+        static QElapsedTimer timer;
+        if (!timer.isValid()) timer.start();
+
         m_activePoints.clear();
+        InkPoint p = { (float)mapToCanvas(pos).x(), (float)mapToCanvas(pos).y(), pressure, 0.0f, timer.elapsed() };
+        m_activePoints.push_back(p);
         m_activeStrokeDirty = true;
         update();
         return true;
     } else if (event->type() == QEvent::TabletMove || event->type() == QEvent::MouseMove) {
-        QPointF pos;
-        float pressure = 0.5f;
-        if (event->type() == QEvent::TabletMove) {
-            QTabletEvent *te = static_cast<QTabletEvent*>(event);
-            pos = te->position();
-            pressure = te->pressure();
-        } else {
+        QSinglePointEvent *spe = static_cast<QSinglePointEvent*>(event);
+        QPointingDevice::PointerType ptype = spe->pointingDevice()->pointerType();
+        
+        if (ptype == QPointingDevice::PointerType::Finger) {
+            return QQuickItem::event(event);
+        }
+
+        float pressure = spe->point(0).pressure();
+        if (pressure <= 0.0f || std::isnan(pressure)) pressure = 0.5f;
+        QPointF pos = spe->position();
+
+        if (event->type() == QEvent::MouseMove) {
             QMouseEvent *me = static_cast<QMouseEvent*>(event);
             if (!(me->buttons() & (Qt::LeftButton | Qt::MiddleButton))) return QQuickItem::event(event);
             
-            // Middle Mouse Panning
+            // Middle Mouse Panning (Desktop)
             if (me->buttons() & Qt::MiddleButton) {
                 QPointF delta = me->position() - m_lastMousePos;
                 m_panOffset += delta;
@@ -195,7 +240,6 @@ bool NoteCanvas::event(QEvent *event)
                 return true;
             }
             m_lastMousePos = me->position();
-            pos = me->position();
         }
         
         QPointF canvasPos = mapToCanvas(pos);
@@ -225,7 +269,11 @@ bool NoteCanvas::event(QEvent *event)
                 update();
             }
         } else {
-            InkPoint p = { (float)canvasPos.x(), (float)canvasPos.y(), pressure, 0.0f, 0 };
+            // Drawing
+            float adjustedPressure = std::pow(pressure, 1.2f);
+            static QElapsedTimer timer;
+            if (!timer.isValid()) timer.start();
+            InkPoint p = { (float)canvasPos.x(), (float)canvasPos.y(), adjustedPressure, 0.0f, timer.elapsed() };
             m_activePoints.push_back(p);
             m_activeStrokeDirty = true;
             update();
@@ -261,7 +309,7 @@ bool NoteCanvas::event(QEvent *event)
                 s.color.setAlphaF(0.4);
                 s.width = 15.0f;
             } else {
-                s.width = 2.0f;
+                s.width = 3.5f;
             }
             m_finishedStrokes.push_back(s);
             m_strokesDirty = true;
@@ -321,7 +369,19 @@ void NoteCanvas::exportCurrentPdf(const QString &outputPath)
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
 {
-    if (event->points().count() == 2) {
+    CN_TRACE("Touch Event: %d points", event->points().count());
+    
+    if (event->points().count() == 1) {
+        const QEventPoint &p = event->points().first();
+        if (p.state() == Qt::TouchPointMoved) {
+            QPointF delta = p.position() - p.lastPosition();
+            m_panOffset += delta;
+            m_transformDirty = true;
+            update();
+        }
+        event->accept();
+        return;
+    } else if (event->points().count() == 2) {
         const QEventPoint &p1 = event->points().first();
         const QEventPoint &p2 = event->points().last();
         
@@ -345,6 +405,7 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
             update();
         }
         event->accept();
+        return; 
     }
     QQuickItem::touchEvent(event);
 }
