@@ -20,12 +20,6 @@ Window {
             width: parent.width
             height: parent.height
 
-            NoteCanvas {
-                id: canvas
-                anchors.fill: parent
-                pdfPath: initialPdf
-            }
-
             Toolbar {
                 id: toolbar
                 canvas: canvas
@@ -33,6 +27,17 @@ Window {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.topMargin: 20
                 width: parent.width * 0.7
+                z: 10 // Ensure it's on top
+            }
+
+            NoteCanvas {
+                id: canvas
+                anchors.top: toolbar.bottom
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.topMargin: 10
+                pdfPath: initialPdf
             }
 
             Text {
