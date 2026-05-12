@@ -80,4 +80,4 @@ make -j$(nproc)
 
 ---
 
-Developed with ❤️ by the CeriumNotes team.
+Developed with ❤️ by the Project Cerium team.
