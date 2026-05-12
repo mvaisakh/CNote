@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Deep Expressive Background -->
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#1A1C1E" />
+        
+    <!-- Dynamic Gradient Orbs -->
+    <path
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"
+        android:fillColor="#381E72"
+        android:alpha="0.6" />
+        
+    <path
+        android:pathData="M108,0L0,108L108,108Z"
+        android:fillColor="#4F378B"
+        android:alpha="0.4" />
+        
+    <path
+        android:pathData="M0,0L108,0L0,108Z"
+        android:fillColor="#D0BCFF"
+        android:alpha="0.1" />
+</vector>

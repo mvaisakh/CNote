@@ -4,6 +4,8 @@
     android:versionCode="1"
     android:versionName="1.0">
 
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"
@@ -13,13 +15,13 @@
 
     <application
         android:label="CeriumNotes"
-        android:name="org.qtproject.qt.android.binding.QtApplication"
+        android:name="org.qtproject.qt.android.bindings.QtApplication"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
 
         <activity
-            android:name="org.qtproject.qt.android.binding.QtActivity"
+            android:name="org.qtproject.qt.android.bindings.QtActivity"
             android:label="CeriumNotes"
             android:screenOrientation="unspecified"
             android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation"
