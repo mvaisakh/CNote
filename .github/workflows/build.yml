@@ -158,7 +158,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             ${{ (matrix.os == 'windows-latest' && matrix.target_arch == 'arm64') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/msvc2022_64', runner.workspace) || '' }} \
             ${{ (matrix.platform == 'ios') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/macos', runner.workspace) || '' }} \
-            ${{ (matrix.platform == 'android') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/gcc_64', runner.workspace) || '' }} \
+            ${{ (matrix.platform == 'android') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/gcc_64 -DCMAKE_TOOLCHAIN_FILE={1}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-34', runner.workspace, env.ANDROID_NDK_ROOT) || '' }} \
             ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
 
       - name: Build
