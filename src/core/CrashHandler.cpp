@@ -13,7 +13,7 @@ static void handle_signal(int sig) {
     void *array[32];
     size_t size;
 
-    fprintf(stderr, "\n--- CNOTE CRASH DUMP (Signal %d) ---\n", sig);
+    fprintf(stderr, "\n--- CERIUMNOTES CRASH DUMP (Signal %d) ---\n", sig);
     
     // Get void*'s for all entries on the stack
 #ifndef ANDROID
@@ -36,7 +36,7 @@ void setupCrashHandler() {
     signal(SIGABRT, handle_signal);
     signal(SIGFPE, handle_signal);
     signal(SIGILL, handle_signal);
-    printf("CNote: Crash handler initialized\n");
+    printf("CeriumNotes: Crash handler initialized\n");
 }
 
 } // namespace Cerium
