@@ -133,20 +133,32 @@ jobs:
           }
         shell: pwsh
 
-      - name: Install Qt (Other)
-        if: matrix.os != 'windows-latest' && matrix.platform != 'linux'
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.8.0'
-          host: ${{ matrix.os == 'macos-latest' && 'mac' || 'linux' }}
-          target: 'desktop'
-          arch: ${{ matrix.os == 'macos-latest' && 'clang_64' || 'linux_gcc_64' }}
+      - name: Install Qt (macOS/iOS/Android)
+        if: matrix.platform != 'linux' && matrix.os != 'windows-latest'
+        run: |
+          python3 -m pip install aqtinstall
+          if [ "${{ matrix.platform }}" == "ios" ]; then
+            python3 -m aqt install-qt mac desktop 6.8.0 clang_64 --outputdir ${{ runner.workspace }}/Qt
+            python3 -m aqt install-qt mac ios 6.8.0 --outputdir ${{ runner.workspace }}/Qt
+            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/ios" >> $GITHUB_ENV
+          elif [ "${{ matrix.platform }}" == "android" ]; then
+            python3 -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 --outputdir ${{ runner.workspace }}/Qt
+            python3 -m aqt install-qt linux android 6.8.0 android_arm64_v8a --outputdir ${{ runner.workspace }}/Qt
+            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/android_arm64_v8a" >> $GITHUB_ENV
+          else
+            python3 -m aqt install-qt mac desktop 6.8.0 clang_64 --outputdir ${{ runner.workspace }}/Qt
+            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/macos" >> $GITHUB_ENV
+          fi
 
 
       - name: Configure CMake
         run: |
-          cmake -B build -G Ninja \
+          cmake -B build \
+            ${{ matrix.os == 'windows-latest' && '-G "Visual Studio 17 2022"' || '-G Ninja' }} \
             -DCMAKE_BUILD_TYPE=Release \
+            ${{ (matrix.os == 'windows-latest' && matrix.target_arch == 'arm64') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/msvc2022_64', runner.workspace) || '' }} \
+            ${{ (matrix.platform == 'ios') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/macos', runner.workspace) || '' }} \
+            ${{ (matrix.platform == 'android') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/gcc_64', runner.workspace) || '' }} \
             ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
 
       - name: Build
