@@ -98,127 +98,117 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
 
 QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    CN_TRACE("updatePaintNode start");
     QSGNode *root = oldNode;
-    if (!root) {
-        CN_TRACE("Creating new root node");
-        root = new QSGNode();
-    }
-
-    if (!window()) {
-        CN_TRACE("No window, aborting");
-        return root;
-    }
-
-    // Layer 0: PDF Background
-    QSGSimpleTextureNode *pdfNode = nullptr;
-    if (root->childCount() > 0) {
-        pdfNode = static_cast<QSGSimpleTextureNode*>(root->childAtIndex(0));
-    }
-
-    // Layer 1: Static Ink
-    QSGGeometryNode *staticNode = nullptr;
-    QSGGeometryNode *activeNode = nullptr;
-    for (int i = 0; i < root->childCount(); ++i) {
-        if (root->childAtIndex(i)->type() == QSGNode::GeometryNodeType) {
-            staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(i));
-            // Assuming the first GeometryNode is static, second is active
-            if (i + 1 < root->childCount() && root->childAtIndex(i+1)->type() == QSGNode::GeometryNodeType) {
-                activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(i+1));
-            }
-            break;
+    
+    // Safety: If the root exists but doesn't have our 3-layer structure, flush it.
+    if (root && root->childCount() != 3) {
+        CN_TRACE("Invalid layer structure detected, flushing...");
+        while (root->childCount() > 0) {
+            QSGNode *n = root->childAtIndex(0);
+            root->removeChildNode(n);
+            delete n;
         }
+        delete root;
+        root = nullptr;
     }
 
-    if (!staticNode) {
-        CN_TRACE("Creating Static Ink node");
-        staticNode = new QSGGeometryNode();
-        staticNode->setFlag(QSGNode::OwnsGeometry);
-        staticNode->setFlag(QSGNode::OwnsMaterial);
-        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-        geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-        geo->setLineWidth(3.0f);
-        staticNode->setGeometry(geo);
-        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(m_penColor);
-        mat->setFlag(QSGMaterial::Blending, true);
-        staticNode->setMaterial(mat);
-        root->appendChildNode(staticNode);
-    } else {
-        static_cast<QSGFlatColorMaterial*>(staticNode->material())->setColor(m_penColor);
+    if (!root) {
+        CN_TRACE("Initializing Layer Stack (PDF, Static, Active)");
+        root = new QSGNode();
+        root->appendChildNode(new QSGNode()); // Index 0: PDF Layer
+        root->appendChildNode(new QSGNode()); // Index 1: Static Ink Layer
+        root->appendChildNode(new QSGNode()); // Index 2: Active Ink Layer
     }
 
-    if (!activeNode) {
-        CN_TRACE("Creating Active Ink node");
-        activeNode = new QSGGeometryNode();
-        activeNode->setFlag(QSGNode::OwnsGeometry);
-        activeNode->setFlag(QSGNode::OwnsMaterial);
-        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-        geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-        geo->setLineWidth(3.0f);
-        activeNode->setGeometry(geo);
-        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(m_penColor); // Use current pen color
-        mat->setFlag(QSGMaterial::Blending, true);
-        activeNode->setMaterial(mat);
-        root->appendChildNode(activeNode);
-    } else {
-        static_cast<QSGFlatColorMaterial*>(activeNode->material())->setColor(m_penColor);
-    }
+    if (!window()) return root;
 
+    QSGNode *pdfLayer = root->childAtIndex(0);
+    QSGNode *staticLayer = root->childAtIndex(1);
+    QSGNode *activeLayer = root->childAtIndex(2);
+
+    // 1. Update PDF Background
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
-        CN_TRACE("Rendering PDF tile...");
+        CN_TRACE("Updating PDF Background texture...");
         QImage img = m_pdfEngine.renderTile(0, 0, 0, m_renderSize.width(), m_renderSize.height(), 1.0f);
         if (!img.isNull()) {
             QSGTexture *texture = window()->createTextureFromImage(img);
             if (texture) {
-                if (!pdfNode) {
-                    pdfNode = new QSGSimpleTextureNode();
-                    root->prependChildNode(pdfNode);
+                // Safely clear old PDF nodes
+                while (pdfLayer->childCount() > 0) {
+                    QSGNode *n = pdfLayer->childAtIndex(0);
+                    pdfLayer->removeChildNode(n);
+                    delete n;
                 }
-                pdfNode->setOwnsTexture(true);
-                pdfNode->setTexture(texture);
-                pdfNode->setRect(0, 0, m_renderSize.width(), m_renderSize.height());
+                
+                QSGSimpleTextureNode *node = new QSGSimpleTextureNode();
+                node->setOwnsTexture(true);
+                node->setTexture(texture);
+                node->setRect(0, 0, m_renderSize.width(), m_renderSize.height());
+                pdfLayer->appendChildNode(node);
             }
         }
         m_pdfDirty = false;
     }
 
+    // 2. Update Active Stroke (Real-time feedback)
     if (m_activeStrokeDirty) {
+        while (activeLayer->childCount() > 0) {
+            QSGNode *n = activeLayer->childAtIndex(0);
+            activeLayer->removeChildNode(n);
+            delete n;
+        }
+
         if (!m_activePoints.empty()) {
+            QSGGeometryNode *node = new QSGGeometryNode();
+            node->setFlag(QSGNode::OwnsGeometry);
+            node->setFlag(QSGNode::OwnsMaterial);
+
             QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
             geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geo->setLineWidth(3.0f);
+            geo->setLineWidth(m_currentTool == Highlighter ? 15.0f : 3.0f);
+            
             QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
             for (size_t i = 0; i < m_activePoints.size(); ++i) {
                 v[i].set(m_activePoints[i].x, m_activePoints[i].y);
             }
-            activeNode->setGeometry(geo);
-            CN_TRACE("Active stroke: %zu points", m_activePoints.size());
-        } else {
-            activeNode->setGeometry(new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0));
+            node->setGeometry(geo);
+
+            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+            mat->setColor(m_penColor);
+            mat->setFlag(QSGMaterial::Blending, true);
+            node->setMaterial(mat);
+
+            activeLayer->appendChildNode(node);
         }
         m_activeStrokeDirty = false;
     }
 
+    // 3. Update Static Ink (Persistent strokes)
     if (m_strokesDirty) {
-        // Simple implementation: Combine all strokes into one geometry for now
-        size_t totalPoints = 0;
-        for (const auto& s : m_finishedStrokes) totalPoints += s.points.size();
-        
-        if (totalPoints > 0) {
-            // Note: DrawLineStrip won't work well for disconnected strokes in one geometry.
-            // For this preview, we'll just show the last stroke to keep it simple and stable.
+        if (!m_finishedStrokes.empty()) {
             const auto& s = m_finishedStrokes.back();
+            CN_TRACE("Committing stroke: color=%s, width=%.1f", s.color.name().toLocal8Bit().constData(), s.width);
+            
+            QSGGeometryNode *node = new QSGGeometryNode();
+            node->setFlag(QSGNode::OwnsGeometry);
+            node->setFlag(QSGNode::OwnsMaterial);
+
             QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), s.points.size());
             geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geo->setLineWidth(3.0f);
+            geo->setLineWidth(s.width);
+            
             QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
             for (size_t i = 0; i < s.points.size(); ++i) {
                 v[i].set(s.points[i].x, s.points[i].y);
             }
-            staticNode->setGeometry(geo);
-            CN_TRACE("Static ink updated: %zu strokes", m_finishedStrokes.size());
+            node->setGeometry(geo);
+
+            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+            mat->setColor(s.color);
+            mat->setFlag(QSGMaterial::Blending, true);
+            node->setMaterial(mat);
+
+            staticLayer->appendChildNode(node);
         }
         m_strokesDirty = false;
     }
