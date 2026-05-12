@@ -22,7 +22,9 @@ Rectangle {
         anchors.fill: root
         blurEnabled: true
         blur: 1.0
-        blurMax: 32
+        blurMax: 64
+        contrast: 0.1
+        brightness: 0.05
         z: -1
     }
 
