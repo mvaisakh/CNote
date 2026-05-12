@@ -61,6 +61,8 @@ message(STATUS "Building CeriumNotes version: ${APP_VERSION_STR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
 qt_standard_project_setup()
+qt_policy(SET QTP0001 NEW)
+qt_policy(SET QTP0004 NEW)
 
 option(ENABLE_PDF "Enable PDF support via MuPDF" ON)
 
