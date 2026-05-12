@@ -134,7 +134,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.2'
+          version: '6.8.0'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
           target: 'desktop'
           arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'gcc_64') }}
@@ -218,10 +218,16 @@ jobs:
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
           cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
 
-      - name: Install Qt
+      - name: Install Qt (Host)
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.2'
+          version: '6.8.0'
+          target: 'desktop'
+
+      - name: Install Qt (Android)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.8.0'
           target: 'android'
           arch: 'android_arm64_v8a'
 
@@ -239,7 +245,9 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-33
+            -DANDROID_PLATFORM=android-33 \
+            -DCMAKE_PREFIX_PATH=$Qt6_DIR \
+            -DQT_HOST_PATH=$QT_ROOT_DIR/gcc_64
 
       - name: Build APK
         run: cmake --build build-android --target apk
@@ -284,10 +292,16 @@ jobs:
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
           cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
 
-      - name: Install Qt
+      - name: Install Qt (Host)
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.2'
+          version: '6.8.0'
+          target: 'desktop'
+
+      - name: Install Qt (iOS)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.8.0'
           target: 'ios'
 
       - name: Configure CMake
