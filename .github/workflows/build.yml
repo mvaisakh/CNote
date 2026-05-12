@@ -41,6 +41,7 @@ jobs:
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        git -C $VCPKG_INSTALLATION_ROOT pull
         vcpkg install mupdf:x64-windows
 
     - name: Install Qt
@@ -109,14 +110,17 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        version: '6.7.2'
         target: 'android'
         arch: 'android_arm64_v8a'
 
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
     - name: Setup Android NDK
-      uses: n0rt3n/setup-android-sdk-ndk@v1
-      with:
-        ndk-version: '25.2.9519653'
+      run: |
+        sdkmanager "ndk;25.2.9519653"
+        echo "ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/25.2.9519653" >> $GITHUB_ENV
 
     - name: Configure CMake
       run: |
@@ -185,7 +189,7 @@ jobs:
     - name: Generate Tag
       id: tag
       run: |
-        VERSION=$(cat version | tr -d '\n')
+        VERSION=$(cat VERSION.txt | tr -d '\n')
         SHA=$(git rev-parse --short HEAD)
         TAG="${VERSION}-${SHA}"
         echo "TAG=${TAG}" >> $GITHUB_ENV

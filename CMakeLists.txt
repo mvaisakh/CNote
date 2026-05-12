@@ -52,7 +52,7 @@ else()
     set(PLATFORM "linux")
 endif()
 
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version" BASE_VERSION)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" BASE_VERSION)
 string(STRIP "${BASE_VERSION}" BASE_VERSION)
 
 cmake_host_system_information(RESULT HOSTNAME_RES QUERY HOSTNAME)
