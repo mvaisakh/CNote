@@ -56,8 +56,11 @@ bool ExportEngine::exportPdf(const QString &sourcePdf,
 
                     // 2. Map PDF Local Space (Scaled) -> PDF Native Space (Points)
                     pts[j].x = (lx / baseScale) + rect.x0;
-                    pts[j].y = rect.y1 - (ly / baseScale);
+                    pts[j].y = (ly / baseScale) + rect.y0;
                 }
+                
+                CN_TRACE("Annotating at PDF Coords: %g, %g (Rect: %g %g %g %g)", 
+                         pts[0].x, pts[0].y, rect.x0, rect.y0, rect.x1, rect.y1);
                 
                 pdf_set_annot_ink_list(ctx, annot, 1, &n, pts);
                 fz_free(ctx, pts);
