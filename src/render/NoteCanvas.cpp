@@ -159,29 +159,27 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // 1. Update PDF Background
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
-        CN_TRACE("Updating High-DPI PDF Background...");
+        CN_TRACE("Rendering PDF at Actual Size...");
         
         QSizeF pageSize = m_pdfEngine.pageSize(0);
         if (!pageSize.isEmpty()) {
             qreal dpr = window()->devicePixelRatio();
-            float baseScale = std::min(m_renderSize.width() / pageSize.width(), 
-                                       m_renderSize.height() / pageSize.height());
+            // Actual Size: 1 point (1/72") -> 1.33 pixels (1/96")
+            float actualScale = 1.333f; 
             
-            // Render at physical resolution for crisp text
-            float renderScale = baseScale * dpr;
-            int targetW = pageSize.width() * baseScale;
-            int targetH = pageSize.height() * baseScale;
+            float renderScale = actualScale * dpr;
+            int targetW = pageSize.width() * actualScale;
+            int targetH = pageSize.height() * actualScale;
+            
+            // Center in the current view
             int offsetX = (m_renderSize.width() - targetW) / 2;
             int offsetY = (m_renderSize.height() - targetH) / 2;
 
-            // We render a tile of the physical size
             QImage img = m_pdfEngine.renderTile(0, 0, 0, targetW * dpr, targetH * dpr, renderScale);
             if (!img.isNull()) {
                 QSGTexture *texture = window()->createTextureFromImage(img);
                 if (texture) {
                     texture->setFiltering(QSGTexture::Linear);
-                    texture->setMipmapFiltering(QSGTexture::None);
-
                     while (pdfLayer->childCount() > 0) {
                         QSGNode *n = pdfLayer->childAtIndex(0);
                         pdfLayer->removeChildNode(n);
