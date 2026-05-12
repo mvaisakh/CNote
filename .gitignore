@@ -1,5 +1,5 @@
 build/
-build-android/
+build-*/
 .cache/
 *.user
 .vscode/
