@@ -61,9 +61,34 @@ message(STATUS "Building CeriumNotes version: ${APP_VERSION_STR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
 
-find_package(PkgConfig REQUIRED)
-if(NOT ANDROID)
-    pkg_check_modules(MUPDF REQUIRED mupdf)
+# MuPDF Dependency Handling
+set(MUPDF_FOUND FALSE)
+
+# 1. Check for vendored MuPDF in third_party
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf")
+    set(MUPDF_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include")
+    set(MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/libmupdf.a") # Simplified
+    set(MUPDF_FOUND TRUE)
+    message(STATUS "Using vendored MuPDF from third_party")
+endif()
+
+# 2. Platform-specific fallbacks
+if(NOT MUPDF_FOUND AND NOT ANDROID)
+    find_package(PkgConfig QUIET)
+    if(PKG_CONFIG_FOUND)
+        pkg_check_modules(MUPDF mupdf)
+    endif()
+endif()
+
+if(NOT MUPDF_FOUND AND NOT ANDROID)
+    # Final fallback for macOS/Windows/Linux if pkg-config fails
+    find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h)
+    find_library(MUPDF_LIBRARY mupdf)
+    if(MUPDF_INCLUDE_DIR AND MUPDF_LIBRARY)
+        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
+        set(MUPDF_LIBRARIES ${MUPDF_LIBRARY})
+        set(MUPDF_FOUND TRUE)
+    endif()
 endif()
 
 qt_add_executable(CNotes
