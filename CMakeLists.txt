@@ -13,23 +13,24 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(MUPDF REQUIRED mupdf)
 
-qt_add_executable(CeriumNotes
+qt_add_executable(CNotes
     src/main.cpp
+    src/pdf/PdfEngine.cpp
 )
 
-qt_add_qml_module(CeriumNotes
+qt_add_qml_module(CNotes
     URI CeriumNotes
     VERSION 1.0
     QML_FILES
         qml/main.qml
 )
 
-target_include_directories(CeriumNotes PRIVATE 
+target_include_directories(CNotes PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${MUPDF_INCLUDE_DIRS}
 )
 
-target_link_libraries(CeriumNotes PRIVATE
+target_link_libraries(CNotes PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
