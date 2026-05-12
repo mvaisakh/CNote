@@ -95,28 +95,26 @@ if(ENABLE_PDF)
     find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
         PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/include
         NO_CACHE)
-    find_library(MUPDF_MAIN_LIBRARY mupdf
-        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/lib
-        NO_CACHE)
-    find_library(MUPDF_THIRD_LIBRARY mupdf-third
-        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/lib
-        NO_CACHE)
-
-    if(MUPDF_INCLUDE_DIR AND MUPDF_MAIN_LIBRARY)
-        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
-        set(MUPDF_LIBRARIES ${MUPDF_MAIN_LIBRARY})
-        if(MUPDF_THIRD_LIBRARY)
-            list(APPEND MUPDF_LIBRARIES ${MUPDF_THIRD_LIBRARY})
-        endif()
-        set(MUPDF_FOUND TRUE)
-    endif()
     
-    if(MUPDF_FOUND)
-        add_definitions(-DENABLE_PDF)
-        message(STATUS "PDF support enabled")
-    else()
-        set(ENABLE_PDF OFF)
+    if(MUPDF_INCLUDE_DIR)
+        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
+        # Link all static libraries found in the local lib directory
+        if(WIN32)
+            file(GLOB MUPDF_LIBRARIES "${CMAKE_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
+        else()
+            file(GLOB MUPDF_LIBRARIES "${CMAKE_SOURCE_DIR}/third_party/mupdf/lib/*.a")
+        endif()
+        
+        if(MUPDF_LIBRARIES)
+            set(MUPDF_FOUND TRUE)
+            add_definitions(-DENABLE_PDF)
+            message(STATUS "PDF support enabled (local build)")
+        endif()
+    endif()
+
+    if(NOT MUPDF_FOUND)
         message(WARNING "MuPDF not found; PDF support disabled")
+        set(ENABLE_PDF OFF)
     endif()
 endif()
 
