@@ -20,10 +20,15 @@ Rectangle {
     ShaderEffectSource {
         id: backgroundCapturer
         sourceItem: canvas
-        sourceRect: Qt.rect(root.x, root.y, root.width, root.height)
+        sourceRect: {
+            if (!canvas) return Qt.rect(0, 0, 0, 0);
+            var pos = root.mapToItem(canvas, 0, 0);
+            return Qt.rect(pos.x, pos.y, root.width, root.height);
+        }
         anchors.fill: root
-        visible: false // Hidden, used as source for MultiEffect
+        visible: false
         live: true
+        recursive: true
     }
 
     // Gaussian Blur Effect
@@ -34,7 +39,7 @@ Rectangle {
         blur: 1.0
         blurMax: 64
         contrast: 0.1
-        brightness: 0.05
+        brightness: 0.1
         z: -1
     }
 
