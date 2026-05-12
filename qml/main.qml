@@ -172,4 +172,15 @@ Window {
             stackView.push(canvasComponent, {"pdfToLoad": initialPdf})
         }
     }
+    // Build Version Label
+    Text {
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: 8
+        text: typeof appVersion !== 'undefined' ? appVersion : "v0.1-unknown"
+        color: "#44FFFFFF"
+        font.pixelSize: 10
+        font.family: "Outfit"
+        z: 100
+    }
 }

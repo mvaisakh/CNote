@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QIcon>
 #include "core/CrashHandler.h"
 #include "core/FileManager.h"
@@ -13,6 +14,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CeriumNotes");
 
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("appVersion", APP_VERSION);
     
     QString initialPdf;
     if (argc > 1) {
