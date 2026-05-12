@@ -159,22 +159,23 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // 1. Update PDF Background
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
-        CN_TRACE("Rendering PDF at Actual Size...");
+        CN_TRACE("Rendering PDF (Fit-to-Page, High-DPI)...");
         
         QSizeF pageSize = m_pdfEngine.pageSize(0);
         if (!pageSize.isEmpty()) {
             qreal dpr = window()->devicePixelRatio();
-            // Actual Size: 1 point (1/72") -> 1.33 pixels (1/96")
-            float actualScale = 1.333f; 
+            float baseScale = std::min(m_renderSize.width() / pageSize.width(), 
+                                       m_renderSize.height() / pageSize.height());
             
-            float renderScale = actualScale * dpr;
-            int targetW = pageSize.width() * actualScale;
-            int targetH = pageSize.height() * actualScale;
+            float renderScale = baseScale * dpr;
+            int targetW = pageSize.width() * baseScale;
+            int targetH = pageSize.height() * baseScale;
             
-            // Center in the current view
+            // Center the PDF in the workspace
             int offsetX = (m_renderSize.width() - targetW) / 2;
             int offsetY = (m_renderSize.height() - targetH) / 2;
 
+            // Render at physical resolution
             QImage img = m_pdfEngine.renderTile(0, 0, 0, targetW * dpr, targetH * dpr, renderScale);
             if (!img.isNull()) {
                 QSGTexture *texture = window()->createTextureFromImage(img);
