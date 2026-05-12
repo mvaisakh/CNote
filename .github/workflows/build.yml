@@ -111,7 +111,7 @@ jobs:
           if ("${{ matrix.target_arch }}" -eq "arm64") {
             $env:CL = "/DFZ_ENABLE_HYPHENATION=0 /DFZ_ENABLE_HYPHEN=0"
           }
-          msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:NoHyphen=1
+          msbuild platform/win32/mupdf.sln /m /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:NoHyphen=1
           cd ..
           New-Item -ItemType Directory -Force -Path third_party/mupdf/include
           New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
