@@ -38,10 +38,25 @@ jobs:
       run: |
         brew install mupdf
 
-    - name: Install Dependencies (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Cache MuPDF
+      id: cache-mupdf
+      uses: actions/cache@v4
+      with:
+        path: third_party/mupdf
+        key: ${{ runner.os }}-mupdf-1.27.2
+
+    - name: Build MuPDF (Windows)
+      if: matrix.os == 'windows-latest' && steps.cache-mupdf.outputs.cache-hit != 'true'
       run: |
-        echo "MuPDF download disabled in CI; using optional PDF support."
+        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+        tar -xzf mupdf.tar.gz
+        cd mupdf-1.27.2-source
+        msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=x64
+        cd ..
+        mkdir -p third_party/mupdf/include
+        mkdir -p third_party/mupdf/lib
+        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+        cp mupdf-1.27.2-source/platform/win32/x64/Release/libmupdf.lib third_party/mupdf/lib/mupdf.lib
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -104,8 +119,25 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libmupdf-dev
 
-    - name: Skip MuPDF for Android
-      run: echo "Skipping MuPDF for Android CI"
+    - name: Cache MuPDF (Android)
+      id: cache-mupdf-android
+      uses: actions/cache@v4
+      with:
+        path: third_party/mupdf
+        key: android-mupdf-1.27.2
+
+    - name: Build MuPDF (Android)
+      if: steps.cache-mupdf-android.outputs.cache-hit != 'true'
+      run: |
+        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+        tar -xzf mupdf.tar.gz
+        cd mupdf-1.27.2-source
+        $ANDROID_NDK_ROOT/ndk-build -C platform/android -j$(nproc) APP_ABI=arm64-v8a
+        cd ..
+        mkdir -p third_party/mupdf/include
+        mkdir -p third_party/mupdf/lib
+        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+        cp mupdf-1.27.2-source/platform/android/obj/local/arm64-v8a/libmupdf.a third_party/mupdf/lib/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -147,8 +179,25 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Skip MuPDF for iOS
-      run: echo "Skipping MuPDF for iOS CI"
+    - name: Cache MuPDF (iOS)
+      id: cache-mupdf-ios
+      uses: actions/cache@v4
+      with:
+        path: third_party/mupdf
+        key: ios-mupdf-1.27.2
+
+    - name: Build MuPDF (iOS)
+      if: steps.cache-mupdf-ios.outputs.cache-hit != 'true'
+      run: |
+        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+        tar -xzf mupdf.tar.gz
+        cd mupdf-1.27.2-source
+        xcodebuild -project platform/ios/mupdf.xcodeproj -scheme libmupdf -configuration Release -sdk iphoneos ARCHS=arm64
+        cd ..
+        mkdir -p third_party/mupdf/include
+        mkdir -p third_party/mupdf/lib
+        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+        cp mupdf-1.27.2-source/platform/ios/build/Release-iphoneos/libmupdf.a third_party/mupdf/lib/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
