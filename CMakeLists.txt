@@ -137,7 +137,7 @@ set_target_properties(CNotes PROPERTIES
 target_link_options(CNotes PRIVATE -rdynamic)
 
 qt_add_qml_module(CNotes
-    URI CeriumNotes.Core
+    URI CNote.Core
     VERSION 1.0
     QML_FILES
         qml/main.qml

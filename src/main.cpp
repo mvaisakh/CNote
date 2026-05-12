@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     initialProperties[QStringLiteral("initialPdf")] = initialPdf;
     engine.setInitialProperties(initialProperties);
 
-    const QUrl url(u"qrc:/CeriumNotes/Core/qml/main.qml"_s);
+    const QUrl url(u"qrc:/CNote/Core/qml/main.qml"_s);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)

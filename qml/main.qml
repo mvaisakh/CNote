@@ -3,7 +3,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Dialogs
 import QtCore
-import CeriumNotes.Core
+import CNote.Core
 
 Window {
     id: root
