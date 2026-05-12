@@ -321,7 +321,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
             -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
-            -DQT_HOST_PATH=$GITHUB_WORKSPACE/Qt/6.8.0/macos
+            -DQT_HOST_PATH=$GITHUB_WORKSPACE/Qt/6.8.0/clang_64
 
       - name: Build
         run: cmake --build build-ios --config Release
