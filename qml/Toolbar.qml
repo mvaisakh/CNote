@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 import CNote.Core
 
 Rectangle {
     id: root
     height: 64
-    color: "#AA1C1B1F"
+    color: "#441C1B1F" // More transparent for glass effect
     radius: 32
     border.color: "#33FFFFFF"
     border.width: 1
@@ -15,13 +16,23 @@ Rectangle {
     signal backRequested()
     signal exportRequested()
 
+    // Glass Blur Effect
+    MultiEffect {
+        source: root
+        anchors.fill: root
+        blurEnabled: true
+        blur: 1.0
+        blurMax: 32
+        z: -1
+    }
+
     // Inner rim light for glass effect
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
         radius: 31
         color: "transparent"
-        border.color: "#11FFFFFF"
+        border.color: "#22FFFFFF"
         border.width: 1
     }
 
