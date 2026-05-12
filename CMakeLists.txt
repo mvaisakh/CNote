@@ -20,6 +20,10 @@ qt_add_executable(CNotes
     src/core/CrashHandler.cpp
 )
 
+set_target_properties(CNotes PROPERTIES
+    QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+)
+
 target_link_options(CNotes PRIVATE -rdynamic)
 
 qt_add_qml_module(CNotes
