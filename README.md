@@ -72,10 +72,29 @@ make -j$(nproc)
 
 ---
 
+## 🏷️ Versioning & Releases
+
+CeriumNotes utilizes a high-traceability versioning system:
+- **Base Version**: Defined in the `/version` file (e.g., `v0.1-alpha`).
+- **Build Version**: Generated dynamically as `${version}-${platform}-${short-sha}-${hostname}`.
+- **In-App Display**: The full build version is displayed at the bottom-center of the interface for debugging and traceability.
+
+## 🚀 Continuous Integration
+
+Every push to the `main` branch triggers a comprehensive **GitHub Actions** workflow:
+- **Matrix Builds**: Parallel compilation for **Linux, macOS, Windows, Android, and iOS**.
+- **Automated Tags**: Builds are automatically tagged in Git as `${version}-${short-sha}`.
+- **Pre-Releases**: Successful builds are pushed to GitHub Releases as `v0.1-alpha` pre-releases with all platform artifacts.
+
+---
+
 ## 📜 Technical Standards
 
-- **Privacy First**: All data is stored locally in `~/.local/share/CeriumNotes`. No telemetry, no cloud sync (unless implemented via user-controlled vault path).
-- **Atomic Commits**: Strict kernel-style commit standards with signed-off-by lines and conventional prefixes.
+- **Privacy First**: All data is stored locally in `~/.local/share/CeriumNotes`. No telemetry, no cloud sync.
+- **Atomic Commits**: Strict kernel-style commit standards.
+  - Prefix: `CNote: <scope>: <description>`
+  - Sign-off: Must include `Signed-off-by` line.
+  - Style: Conventional, atomic, and descriptive.
 - **Hardware Acceleration**: 100% GPU-backed rendering via the Qt Scene Graph.
 
 ---
