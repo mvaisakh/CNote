@@ -13,6 +13,49 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# Versioning Logic
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} status --porcelain
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_STATUS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(GIT_STATUS)
+        set(GIT_DIRTY "-dirty")
+    endif()
+endif()
+
+if(NOT GIT_HASH)
+    set(GIT_HASH "unknown")
+endif()
+
+if(ANDROID)
+    set(PLATFORM "android")
+elseif(APPLE)
+    # Check if building for iOS or macOS
+    if(IOS)
+        set(PLATFORM "ios")
+    else()
+        set(PLATFORM "macos")
+    endif()
+elseif(WIN32)
+    set(PLATFORM "windows")
+else()
+    set(PLATFORM "linux")
+endif()
+
+cmake_host_system_information(RESULT HOSTNAME_RES QUERY HOSTNAME)
+set(APP_VERSION_STR "v0.1-${PLATFORM}-${GIT_HASH}-${HOSTNAME_RES}${GIT_DIRTY}")
+message(STATUS "Building CeriumNotes version: ${APP_VERSION_STR}")
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
 
 find_package(PkgConfig REQUIRED)
