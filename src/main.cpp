@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CeriumNotes");
 
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("appVersion", APP_VERSION);
+    engine.rootContext()->setContextProperty("appVersion", APP_VERSION_STR);
     
     QString initialPdf;
     if (argc > 1) {
