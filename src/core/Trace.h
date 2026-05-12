@@ -12,7 +12,7 @@
  */
 
 #if defined(DEBUG) || defined(_DEBUG) || !defined(NDEBUG) || defined(CN_ENABLE_TRACING)
-    #define CN_TRACE(fmt, ...) printf("CNote: " fmt "\n", ##__VA_ARGS__)
+    #define CN_TRACE(fmt, ...) printf("CeriumNotes: " fmt "\n", ##__VA_ARGS__)
 #else
     #define CN_TRACE(fmt, ...) do {} while (0)
 #endif
