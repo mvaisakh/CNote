@@ -127,6 +127,7 @@ qt_add_executable(CNotes
 
 set_target_properties(CNotes PROPERTIES
     QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+    OUTPUT_NAME "CeriumNotes"
 )
 
 target_link_options(CNotes PRIVATE -rdynamic)

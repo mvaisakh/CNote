@@ -164,7 +164,7 @@ jobs:
         run: |
           VERSION=$(cat VERSION.txt | tr -d '\n')
           APP_PATH=$(find build -name "*.app" | head -n 1)
-          mv build/CNotes.app CeriumNotes-$VERSION-${{ matrix.target_arch }}.app
+          mv build/CeriumNotes.app CeriumNotes-$VERSION-${{ matrix.target_arch }}.app
           zip -r CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip CeriumNotes-${VERSION}-${{ matrix.target_arch }}.app
           echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip" >> $GITHUB_ENV
 
