@@ -46,6 +46,10 @@ Window {
             fileManager: fileManager
             onOpenPdf: (path) => stackView.push(canvasComponent, {"pdfToLoad": path})
             onImportRequested: fileDialog.open()
+            onNewNoteRequested: {
+                var path = fileManager.createNewNote()
+                stackView.push(canvasComponent, {"pdfToLoad": path})
+            }
         }
     }
 

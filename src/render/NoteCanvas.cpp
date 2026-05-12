@@ -86,11 +86,14 @@ void NoteCanvas::setPdfPath(const QString& path)
     m_pdfPath = path;
     
     QFileInfo checkFile(path);
-    if (checkFile.exists() && checkFile.isFile()) {
+    if (checkFile.exists() && checkFile.isFile() && path.endsWith(".pdf")) {
         CN_TRACE("Loading PDF: %s", path.toLocal8Bit().constData());
         m_pdfEngine.loadDocument(path.toStdString());
+    } else if (path.endsWith(".note")) {
+        CN_TRACE("Loading Blank Note: %s", path.toLocal8Bit().constData());
+        m_pdfEngine.closeDocument(); // Ensure no previous PDF stays loaded
     } else {
-        CN_TRACE("PDF file does not exist or is not a file: %s", path.toLocal8Bit().constData());
+        CN_TRACE("File is not a supported document: %s", path.toLocal8Bit().constData());
     }
     
     m_pdfDirty = true;

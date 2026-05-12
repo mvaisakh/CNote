@@ -17,6 +17,7 @@ public:
     explicit FileManager(QObject *parent = nullptr);
 
     Q_INVOKABLE QString importPdf(const QUrl &fileUrl);
+    Q_INVOKABLE QString createNewNote();
     Q_INVOKABLE QString getStoragePath() const;
     Q_INVOKABLE QStringList getImportedFiles() const;
 

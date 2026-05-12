@@ -9,6 +9,7 @@ Rectangle {
     property var fileManager
     signal openPdf(string path)
     signal importRequested()
+    signal newNoteRequested()
 
     property var importedFiles: []
 
@@ -36,7 +37,17 @@ Rectangle {
             Item { Layout.fillWidth: true }
             
             Button {
-                text: "+ Import PDF"
+                text: "+ New Note"
+                onClicked: dashboardRoot.newNoteRequested()
+                background: Rectangle {
+                    color: "#00adb5"
+                    radius: 8
+                }
+                palette.buttonText: "white"
+            }
+
+            Button {
+                text: "Import PDF"
                 onClicked: dashboardRoot.importRequested()
                 background: Rectangle {
                     color: "#333"
@@ -73,16 +84,16 @@ Rectangle {
                         anchors.margins: 10
                         spacing: 10
 
-                        // Placeholder for Thumbnail
+                        // Thumbnail
                         Rectangle {
                             width: parent.width
                             height: 150
-                            color: "#2a2a2a"
+                            color: modelData.endsWith(".note") ? "#00adb5" : "#2a2a2a"
                             radius: 8
                             Text {
                                 anchors.centerIn: parent
-                                text: "PDF"
-                                color: "#444"
+                                text: modelData.endsWith(".note") ? "NOTE" : "PDF"
+                                color: modelData.endsWith(".note") ? "white" : "#444"
                                 font.pixelSize: 24
                                 font.bold: true
                             }
@@ -90,7 +101,13 @@ Rectangle {
 
                         Text {
                             width: parent.width
-                            text: modelData.split('/').pop().split('_').slice(1).join('_')
+                            text: {
+                                var parts = modelData.split('/')
+                                var name = parts[parts.length - 1]
+                                var subParts = name.split('_')
+                                if (subParts.length > 1) return subParts.slice(1).join('_').replace(".pdf", "").replace(".note", "")
+                                return name
+                            }
                             color: "white"
                             font.pixelSize: 14
                             elide: Text.ElideMiddle

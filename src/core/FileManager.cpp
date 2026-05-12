@@ -30,6 +30,12 @@ QString FileManager::importPdf(const QUrl &fileUrl)
     return QString();
 }
 
+QString FileManager::createNewNote()
+{
+    QString targetName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_NewNote.note";
+    return m_basePath + "/" + targetName;
+}
+
 QString FileManager::getStoragePath() const
 {
     return m_basePath;
@@ -39,7 +45,7 @@ QStringList FileManager::getImportedFiles() const
 {
     QDir dir(m_basePath);
     QStringList filters;
-    filters << "*.pdf";
+    filters << "*.pdf" << "*.note";
     QStringList files = dir.entryList(filters, QDir::Files, QDir::Time);
     for (int i = 0; i < files.size(); ++i) {
         files[i] = m_basePath + "/" + files[i];
