@@ -65,20 +65,9 @@ Window {
                 width: parent.width * 0.7
                 z: 10 
                 
-                // Add back button to return to dashboard
-                Row {
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: 15
-                    
-                    Button {
-                        text: "⬅ Library"
-                        flat: true
-                        onClicked: {
-                            stackView.pop()
-                            dashboard.refresh()
-                        }
-                    }
+                onBackRequested: {
+                    stackView.pop()
+                    dashboard.refresh()
                 }
             }
 

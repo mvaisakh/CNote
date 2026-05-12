@@ -10,14 +10,21 @@ Rectangle {
     opacity: 0.95
     
     property var canvas
-    signal openRequested()
+    signal backRequested()
 
     RowLayout {
         anchors.fill: parent
         anchors.margins: 10
-        spacing: 20
+        spacing: 15
 
-        // Tool Selection
+        Button {
+            text: "⬅ Library"
+            flat: true
+            font.pixelSize: 14
+            onClicked: root.backRequested()
+        }
+
+        Item { width: 10 } // Spacer
         Button {
             text: "Pen"
             flat: true
