@@ -35,6 +35,9 @@ jobs:
             platform: windows
             target_arch: arm64
 
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -113,7 +116,8 @@ jobs:
           tar -xzf mupdf.tar.gz
           cd mupdf-1.27.2-source
           $MS_PLATFORM = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
-          msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+          $PREPROCESSOR = if ("${{ matrix.target_arch }}" -eq "arm64") { "FZ_ENABLE_HYPHENATION=0" } else { "" }
+          msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:PreprocessorDefinitions="$PREPROCESSOR"
           cd ..
           New-Item -ItemType Directory -Force -Path third_party/mupdf/include
           New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
@@ -124,7 +128,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.3'
+          version: '6.7.2'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
           target: 'desktop'
           arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'gcc_64') }}
@@ -160,7 +164,7 @@ jobs:
         run: |
           VERSION=$(cat VERSION.txt | tr -d '\n')
           APP_PATH=$(find build -name "*.app" | head -n 1)
-          mv "$APP_PATH" CeriumNotes-${VERSION}-${{ matrix.target_arch }}.app
+          mv build/CNotes.app CeriumNotes-$VERSION-${{ matrix.target_arch }}.app
           zip -r CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip CeriumNotes-${VERSION}-${{ matrix.target_arch }}.app
           echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip" >> $GITHUB_ENV
 
@@ -175,6 +179,9 @@ jobs:
   build-android:
     name: Build (Android)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -208,7 +215,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.3'
+          version: '6.7.2'
           target: 'android'
           arch: 'android_arm64_v8a'
 
@@ -240,6 +247,9 @@ jobs:
   build-ios:
     name: Build (iOS)
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -271,7 +281,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.3'
+          version: '6.7.2'
           target: 'ios'
 
       - name: Configure CMake
@@ -295,6 +305,9 @@ jobs:
     needs: [build-desktop, build-android, build-ios]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
