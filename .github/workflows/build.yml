@@ -41,9 +41,7 @@ jobs:
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-windows-lib.zip -o mupdf.zip
-        expand-archive mupdf.zip -destinationpath third_party/mupdf
-        move third_party/mupdf/mupdf-1.24.1-windows-lib/* third_party/mupdf/
+        echo "MuPDF download disabled in CI; using optional PDF support."
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -106,12 +104,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libmupdf-dev
 
-    - name: Install MuPDF for Android
-      run: |
-        mkdir -p third_party/mupdf
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-android-lib.zip -o mupdf-android.zip
-        unzip mupdf-android.zip -d third_party/mupdf
-        mv third_party/mupdf/mupdf-1.24.1-android-lib/* third_party/mupdf/
+    - name: Skip MuPDF for Android
+      run: echo "Skipping MuPDF for Android CI"
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -153,12 +147,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install MuPDF for iOS
-      run: |
-        mkdir -p third_party/mupdf
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-ios-lib.zip -o mupdf-ios.zip
-        unzip mupdf-ios.zip -d third_party/mupdf
-        mv third_party/mupdf/mupdf-1.24.1-ios-lib/* third_party/mupdf/
+    - name: Skip MuPDF for iOS
+      run: echo "Skipping MuPDF for iOS CI"
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3

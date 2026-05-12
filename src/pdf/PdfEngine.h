@@ -4,10 +4,8 @@
 #include <QImage>
 #include <QMutex>
 
-#ifndef ANDROID
-extern "C" {
+#ifdef ENABLE_PDF
 #include <mupdf/fitz.h>
-}
 #endif
 
 class PdfEngine {
@@ -25,7 +23,7 @@ public:
     QImage renderTile(int pageNum, int x, int y, int width, int height, float scale);
 
 private:
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     fz_context* m_ctx = nullptr;
     fz_document* m_doc = nullptr;
 #endif

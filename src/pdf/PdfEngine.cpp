@@ -4,7 +4,7 @@
 
 PdfEngine::PdfEngine()
 {
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     initContext();
 #endif
 }
@@ -12,14 +12,14 @@ PdfEngine::PdfEngine()
 PdfEngine::~PdfEngine()
 {
     closeDocument();
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (m_ctx) {
         fz_drop_context(m_ctx);
     }
 #endif
 }
 
-#ifndef ANDROID
+#ifdef ENABLE_PDF
 #include <QMutex>
 #include <vector>
 
@@ -42,7 +42,7 @@ static fz_locks_context g_mupdf_locks = {
 
 void PdfEngine::initContext()
 {
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     CN_TRACE("Initializing context with locks...");
     m_ctx = fz_new_context(nullptr, &g_mupdf_locks, FZ_STORE_DEFAULT);
     if (!m_ctx) {
@@ -59,7 +59,7 @@ bool PdfEngine::loadDocument(const std::string& path)
     QMutexLocker locker(&m_mutex);
     closeDocument();
 
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (!m_ctx) return false;
 
     CN_TRACE("Opening document: %s", path.c_str());
@@ -74,13 +74,14 @@ bool PdfEngine::loadDocument(const std::string& path)
 
     return true;
 #else
+    (void)path;
     return false;
 #endif
 }
 
 void PdfEngine::closeDocument()
 {
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (m_doc) {
         fz_drop_document(m_ctx, m_doc);
         m_doc = nullptr;
@@ -91,7 +92,7 @@ void PdfEngine::closeDocument()
 int PdfEngine::pageCount() const
 {
     QMutexLocker locker(&m_mutex);
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (!m_ctx || !m_doc) return 0;
 
     int count = 0;
@@ -110,7 +111,7 @@ int PdfEngine::pageCount() const
 QSizeF PdfEngine::pageSize(int pageNum) const
 {
     QMutexLocker locker(&m_mutex);
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (!m_ctx || !m_doc) return QSizeF();
 
     fz_page* page = nullptr;
@@ -125,6 +126,7 @@ QSizeF PdfEngine::pageSize(int pageNum) const
     }
     return QSizeF(rect.x1 - rect.x0, rect.y1 - rect.y0);
 #else
+    (void)pageNum;
     return QSizeF();
 #endif
 }
@@ -132,7 +134,7 @@ QSizeF PdfEngine::pageSize(int pageNum) const
 QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, float scale)
 {
     QMutexLocker locker(&m_mutex);
-#ifndef ANDROID
+#ifdef ENABLE_PDF
     if (!m_ctx) {
         CN_TRACE("No context");
         return QImage();
@@ -204,6 +206,7 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
 
     return image;
 #else
+    (void)pageNum; (void)x; (void)y; (void)width; (void)height; (void)scale;
     return QImage();
 #endif
 }
