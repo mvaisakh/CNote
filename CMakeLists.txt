@@ -29,6 +29,13 @@ qt_add_qml_module(CNotes
         qml/main.qml
         qml/Toolbar.qml
         qml/Dashboard.qml
+    RESOURCES
+        icons/pen.svg
+        icons/highlighter.svg
+        icons/eraser.svg
+        icons/export.svg
+        icons/back.svg
+        icons/add.svg
     SOURCES
         src/render/NoteCanvas.h
         src/render/NoteCanvas.cpp

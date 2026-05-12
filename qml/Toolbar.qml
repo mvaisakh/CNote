@@ -19,48 +19,80 @@ Rectangle {
         spacing: 15
 
         Button {
-            text: "⬅ Library"
-            flat: true
-            font.pixelSize: 14
             onClicked: root.backRequested()
+            background: Rectangle {
+                color: "transparent"
+                radius: 15
+                Rectangle {
+                    anchors.fill: parent
+                    color: "white"
+                    opacity: parent.parent.hovered ? 0.1 : 0
+                }
+            }
+            contentItem: Image {
+                source: "qrc:/CeriumNotes/icons/back.svg"
+                sourceSize: Qt.size(24, 24)
+                fillMode: Image.Pad
+                horizontalAlignment: Image.AlignHCenter
+                verticalAlignment: Image.AlignVCenter
+            }
         }
 
-        Item { width: 10 } // Spacer
-        Button {
-            text: "Pen"
-            flat: true
-            font.pixelSize: 16
-            palette.buttonText: canvas.currentTool === 0 ? "white" : "#aaaaaa"
-            onClicked: canvas.currentTool = 0
-        }
+        Row {
+            spacing: 15
+            Layout.alignment: Qt.AlignHCenter
 
-        Button {
-            text: "Highlighter"
-            flat: true
-            font.pixelSize: 16
-            palette.buttonText: canvas.currentTool === 1 ? "white" : "#aaaaaa"
-            onClicked: canvas.currentTool = 1
-        }
+            Repeater {
+                model: [
+                    { name: "Pen", icon: "pen.svg", tool: 0 },
+                    { name: "Highlighter", icon: "highlighter.svg", tool: 1 },
+                    { name: "Eraser", icon: "eraser.svg", tool: 2 }
+                ]
 
-        Button {
-            text: "Eraser"
-            flat: true
-            font.pixelSize: 16
-            palette.buttonText: canvas.currentTool === 2 ? "white" : "#aaaaaa"
-            onClicked: canvas.currentTool = 2
+                delegate: Button {
+                    property bool isActive: canvas ? canvas.currentTool === modelData.tool : false
+                    onClicked: if (canvas) canvas.currentTool = modelData.tool
+                    
+                    background: Rectangle {
+                        implicitWidth: 44
+                        implicitHeight: 44
+                        radius: 22
+                        color: isActive ? "#00adb5" : "transparent"
+                        opacity: isActive ? 1.0 : (hovered ? 0.1 : 0)
+                        
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "white"
+                            radius: 22
+                            visible: !isActive && parent.parent.hovered
+                        }
+                    }
+                    
+                    contentItem: Image {
+                        source: "qrc:/CeriumNotes/icons/" + modelData.icon
+                        sourceSize: Qt.size(24, 24)
+                        fillMode: Image.PreserveAspectFit
+                        opacity: isActive ? 1.0 : 0.7
+                    }
+                }
+            }
         }
 
         Item { Layout.fillWidth: true }
 
         Button {
-            text: "Export PDF"
             onClicked: root.exportRequested()
             background: Rectangle {
-                color: "#2a2a2a"
-                radius: 8
-                border.color: "#3a3a3a"
+                implicitWidth: 44
+                implicitHeight: 44
+                color: hovered ? "#333" : "transparent"
+                radius: 22
             }
-            palette.buttonText: "white"
+            contentItem: Image {
+                source: "qrc:/CeriumNotes/icons/export.svg"
+                sourceSize: Qt.size(24, 24)
+                fillMode: Image.PreserveAspectFit
+            }
         }
 
         Rectangle {

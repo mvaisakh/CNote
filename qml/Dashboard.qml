@@ -65,13 +65,24 @@ Rectangle {
             Item { Layout.fillWidth: true }
             
             Button {
-                text: "+ New Note"
                 onClicked: nameDialog.open()
                 background: Rectangle {
+                    implicitWidth: 44
+                    implicitHeight: 44
                     color: "#00adb5"
-                    radius: 8
+                    radius: 22
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "white"
+                        opacity: parent.parent.hovered ? 0.2 : 0
+                        radius: 22
+                    }
                 }
-                palette.buttonText: "white"
+                contentItem: Image {
+                    source: "qrc:/CeriumNotes/icons/add.svg"
+                    sourceSize: Qt.size(24, 24)
+                    fillMode: Image.PreserveAspectFit
+                }
             }
 
             Button {
