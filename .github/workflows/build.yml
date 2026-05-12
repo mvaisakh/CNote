@@ -65,7 +65,9 @@ jobs:
           curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
           tar -xzf mupdf.tar.gz
           cd mupdf-1.27.2-source
-          make -j$(sysctl -n hw.ncpu) libs HAVE_X11=no HAVE_GLUT=no OS=macos ARCH=${{ matrix.target_arch }}
+          make -j$(sysctl -n hw.ncpu) libs HAVE_X11=no HAVE_GLUT=no OS=macos \
+            XCFLAGS="-arch ${{ matrix.target_arch }}" \
+            XLDFLAGS="-arch ${{ matrix.target_arch }}"
           cd ..
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
