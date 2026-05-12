@@ -119,9 +119,38 @@ jobs:
         name: CeriumNotes-android
         path: build-android/android-build/build/outputs/apk/release/*.apk
 
+  build-ios:
+    name: Build (iOS)
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.3'
+        target: 'ios'
+
+    - name: Configure CMake
+      run: |
+        cmake -B build-ios -G Xcode \
+          -DCMAKE_SYSTEM_NAME=iOS \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
+
+    - name: Build
+      run: cmake --build build-ios --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CeriumNotes-ios
+        path: build-ios/Release-iphoneos/*.ipa
+
   release:
     name: Create Pre-Release
-    needs: [build-desktop, build-android]
+    needs: [build-desktop, build-android, build-ios]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
