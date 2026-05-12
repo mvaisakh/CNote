@@ -80,8 +80,13 @@ Rectangle {
                 }
                 contentItem: Image {
                     source: "qrc:/CeriumNotes/icons/add.svg"
-                    sourceSize: Qt.size(24, 24)
+                    width: 24
+                    height: 24
+                    sourceSize: Qt.size(64, 64)
                     fillMode: Image.PreserveAspectFit
+                    horizontalAlignment: Image.AlignHCenter
+                    verticalAlignment: Image.AlignVCenter
+                    smooth: true
                 }
             }
 

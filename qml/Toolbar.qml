@@ -31,8 +31,10 @@ Rectangle {
             }
             contentItem: Image {
                 source: "qrc:/CeriumNotes/icons/back.svg"
+                width: 24
+                height: 24
                 sourceSize: Qt.size(64, 64)
-                fillMode: Image.Pad
+                fillMode: Image.PreserveAspectFit
                 horizontalAlignment: Image.AlignHCenter
                 verticalAlignment: Image.AlignVCenter
                 smooth: true
@@ -71,8 +73,12 @@ Rectangle {
                     
                     contentItem: Image {
                         source: "qrc:/CeriumNotes/icons/" + modelData.icon
+                        width: 24
+                        height: 24
                         sourceSize: Qt.size(64, 64)
                         fillMode: Image.PreserveAspectFit
+                        horizontalAlignment: Image.AlignHCenter
+                        verticalAlignment: Image.AlignVCenter
                         opacity: isActive ? 1.0 : 0.7
                         smooth: true
                     }
@@ -98,8 +104,12 @@ Rectangle {
             }
             contentItem: Image {
                 source: "qrc:/CeriumNotes/icons/export.svg"
+                width: 24
+                height: 24
                 sourceSize: Qt.size(64, 64)
                 fillMode: Image.PreserveAspectFit
+                horizontalAlignment: Image.AlignHCenter
+                verticalAlignment: Image.AlignVCenter
                 smooth: true
             }
         }
