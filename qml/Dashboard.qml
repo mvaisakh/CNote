@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Rectangle {
     id: dashboardRoot
-    color: "#121212"
+    color: "transparent"
 
     property var fileManager
     signal openPdf(string path)
@@ -21,22 +21,40 @@ Rectangle {
 
     Dialog {
         id: nameDialog
-        title: "Name your Note"
+        title: "New Note"
         anchors.centerIn: parent
         modal: true
         standardButtons: Dialog.Ok | Dialog.Cancel
 
+        background: Rectangle {
+            color: root.colorSurface
+            radius: 28
+            border.color: "#33FFFFFF"
+        }
+
         Column {
-            spacing: 10
+            spacing: 20
             width: parent.width
-            Text { text: "Enter note name:"; color: "white" }
+            padding: 10
+            Text { 
+                text: "What shall we call this note?"
+                color: "white" 
+                font.pixelSize: 18
+                font.weight: Font.Medium
+            }
             TextField {
                 id: nameField
-                width: 250
-                placeholderText: "Meeting Notes..."
-                focus: true
+                width: parent.width
+                placeholderText: "Meeting with the team..."
                 color: "white"
-                background: Rectangle { color: "#333"; radius: 4 }
+                font.pixelSize: 16
+                padding: 12
+                background: Rectangle { 
+                    color: "#11FFFFFF"
+                    radius: 12
+                    border.color: parent.activeFocus ? root.colorPrimary : "#22FFFFFF"
+                    border.width: 1
+                }
                 onAccepted: nameDialog.accept()
             }
         }
@@ -50,58 +68,71 @@ Rectangle {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 40
-        spacing: 30
+        spacing: 32
 
         RowLayout {
             Layout.fillWidth: true
             
-            Text {
-                text: "My Library"
-                color: "white"
-                font.pixelSize: 32
-                font.bold: true
+            Column {
+                spacing: 4
+                Text {
+                    text: "My Library"
+                    color: "white"
+                    font.pixelSize: 36
+                    font.weight: Font.Bold
+                }
+                Text {
+                    text: "Welcome back. Pick up where you left off."
+                    color: "#AAFFFFFF"
+                    font.pixelSize: 16
+                }
             }
             
             Item { Layout.fillWidth: true }
             
             Button {
+                id: newNoteBtn
                 onClicked: nameDialog.open()
                 background: Rectangle {
-                    implicitWidth: 44
-                    implicitHeight: 44
-                    color: "#00adb5"
-                    radius: 22
-                    Rectangle {
-                        anchors.fill: parent
-                        color: "white"
-                        opacity: parent.parent.hovered ? 0.2 : 0
-                        radius: 22
-                    }
+                    implicitWidth: 56
+                    implicitHeight: 56
+                    color: newNoteBtn.hovered ? root.colorPrimary : "#1AFFFFFF"
+                    radius: 28
+                    Behavior on color { ColorAnimation { duration: 200 } }
                 }
                 contentItem: Item {
-                    implicitWidth: 44
-                    implicitHeight: 44
                     Image {
                         anchors.centerIn: parent
                         width: 28
                         height: 28
                         source: "qrc:/CeriumNotes/icons/add.svg"
                         sourceSize: Qt.size(64, 64)
-                        fillMode: Image.PreserveAspectFit
                         smooth: true
+                        opacity: newNoteBtn.hovered ? 1.0 : 0.8
                     }
                 }
             }
 
             Button {
+                id: importBtn
                 text: "Import PDF"
                 onClicked: dashboardRoot.importRequested()
-                background: Rectangle {
-                    color: "#333"
-                    radius: 8
-                    border.color: "#444"
+                contentItem: Text {
+                    text: importBtn.text
+                    color: "white"
+                    font.pixelSize: 14
+                    font.weight: Font.Medium
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
-                palette.buttonText: "white"
+                background: Rectangle {
+                    implicitWidth: 120
+                    implicitHeight: 48
+                    color: importBtn.hovered ? "#33FFFFFF" : "#1AFFFFFF"
+                    radius: 24
+                    border.color: "#22FFFFFF"
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                }
             }
         }
 
@@ -110,39 +141,63 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             model: dashboardRoot.importedFiles
-            cellWidth: 200
-            cellHeight: 250
+            cellWidth: 220
+            cellHeight: 280
             clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
             delegate: Item {
-                width: 180
-                height: 230
+                width: 200
+                height: 260
 
                 Rectangle {
+                    id: card
                     anchors.fill: parent
-                    anchors.margins: 5
-                    color: "#1e1e1e"
-                    radius: 12
-                    border.color: mouseArea.containsMouse ? "cyan" : "#333"
+                    anchors.margins: 8
+                    color: mouseArea.containsMouse ? "#2AFFFFFF" : "#1AFFFFFF"
+                    radius: 24
+                    border.color: mouseArea.containsMouse ? root.colorPrimary : "#11FFFFFF"
                     border.width: 1
+
+                    scale: mouseArea.pressed ? 0.95 : (mouseArea.containsMouse ? 1.05 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                    Behavior on color { ColorAnimation { duration: 200 } }
+
+                    // Entry Animation
+                    opacity: 0
+                    y: 20
+                    Component.onCompleted: {
+                        entryAnim.start()
+                    }
+                    ParallelAnimation {
+                        id: entryAnim
+                        NumberAnimation { target: card; property: "opacity"; to: 1; duration: 400; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: card; property: "y"; to: 0; duration: 400; easing.type: Easing.OutCubic }
+                    }
 
                     Column {
                         anchors.fill: parent
-                        anchors.margins: 10
-                        spacing: 10
+                        anchors.margins: 12
+                        spacing: 16
 
                         // Thumbnail
                         Rectangle {
                             width: parent.width
-                            height: 150
-                            color: modelData.endsWith(".note") ? "#00adb5" : "#2a2a2a"
-                            radius: 8
+                            height: 160
+                            radius: 16
+                            clip: true
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: modelData.endsWith(".note") ? "#381E72" : "#1A1C1E" }
+                                GradientStop { position: 1.0; color: modelData.endsWith(".note") ? "#4F378B" : "#0F1113" }
+                            }
+                            
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.endsWith(".note") ? "NOTE" : "PDF"
-                                color: modelData.endsWith(".note") ? "white" : "#444"
-                                font.pixelSize: 24
-                                font.bold: true
+                                color: "white"
+                                opacity: 0.2
+                                font.pixelSize: 32
+                                font.weight: Font.Black
                             }
                         }
 
@@ -156,7 +211,8 @@ Rectangle {
                                 return name
                             }
                             color: "white"
-                            font.pixelSize: 14
+                            font.pixelSize: 15
+                            font.weight: Font.Medium
                             elide: Text.ElideMiddle
                             horizontalAlignment: Text.AlignHCenter
                         }

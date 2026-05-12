@@ -11,7 +11,22 @@ Window {
     height: 800
     visible: true
     title: qsTr("CeriumNotes")
-    color: "#121212"
+    color: "#0F1113"
+
+    readonly property color colorPrimary: "#D0BCFF"
+    readonly property color colorBg: "#0F1113"
+    readonly property color colorSurface: "#1C1B1F"
+    readonly property color colorSurfaceVariant: "#49454F"
+    readonly property color colorGlass: "#CC1C1B1F"
+
+    Rectangle {
+        anchors.fill: parent
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#1A1C1E" }
+            GradientStop { position: 1.0; color: "#0F1113" }
+        }
+        z: -1
+    }
 
     required property string initialPdf
 
@@ -64,6 +79,23 @@ Window {
         anchors.fill: parent
         initialItem: dashboard
 
+        pushEnter: Transition {
+            PropertyAnimation { property: "opacity"; from: 0; to: 1; duration: 300 }
+            PropertyAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
+        }
+        pushExit: Transition {
+            PropertyAnimation { property: "opacity"; from: 1; to: 0; duration: 300 }
+            PropertyAnimation { property: "scale"; from: 1.0; to: 1.05; duration: 300; easing.type: Easing.OutCubic }
+        }
+        popEnter: Transition {
+            PropertyAnimation { property: "opacity"; from: 0; to: 1; duration: 300 }
+            PropertyAnimation { property: "scale"; from: 1.05; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
+        }
+        popExit: Transition {
+            PropertyAnimation { property: "opacity"; from: 1; to: 0; duration: 300 }
+            PropertyAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 300; easing.type: Easing.OutCubic }
+        }
+
         Dashboard {
             id: dashboard
             fileManager: fileManager
@@ -83,13 +115,39 @@ Window {
             property alias canvas: canvas
             property string pdfToLoad
 
+            NoteCanvas {
+                id: canvas
+                anchors.fill: parent
+                pdfPath: pdfToLoad
+
+                // Subtle Dotted Background
+                Canvas {
+                    anchors.fill: parent
+                    z: -1
+                    opacity: 0.1
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.fillStyle = "white";
+                        var spacing = 30;
+                        for (var x = spacing; x < width; x += spacing) {
+                            for (var y = spacing; y < height; y += spacing) {
+                                ctx.beginPath();
+                                ctx.arc(x, y, 1, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+            }
+
             Toolbar {
                 id: toolbar
                 canvas: canvas
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
-                anchors.topMargin: 20
-                width: parent.width * 0.7
+                anchors.topMargin: 24
+                width: Math.min(parent.width * 0.8, 800)
                 z: 10 
                 
                 onBackRequested: {
@@ -98,16 +156,6 @@ Window {
                 }
                 
                 onExportRequested: root.openExport()
-            }
-
-            NoteCanvas {
-                id: canvas
-                anchors.top: toolbar.bottom
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.topMargin: 10
-                pdfPath: pdfToLoad
             }
             
             Component.onCompleted: {
