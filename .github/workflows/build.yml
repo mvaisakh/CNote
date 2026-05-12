@@ -234,20 +234,13 @@ jobs:
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
           cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
 
-      - name: Install Qt (Host)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.8.0'
-          target: 'desktop'
-      - name: Save Host Qt Path
-        run: echo "QT_HOST_PATH_DIR=${Qt6_DIR%/lib/cmake/Qt6}" >> $GITHUB_ENV
-
       - name: Install Qt (Android)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.8.0'
-          target: 'android'
-          arch: 'android_arm64_v8a'
+        run: |
+          python3 -m pip install aqtinstall --break-system-packages
+          python3 -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 -m qtdeclarative qtshadertools qttools --outputdir ${{ runner.workspace }}/Qt
+          python3 -m aqt install-qt linux android 6.8.0 android_arm64_v8a -m qtdeclarative qtshadertools qttools --outputdir ${{ runner.workspace }}/Qt
+          echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/android_arm64_v8a" >> $GITHUB_ENV
+          echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64" >> $GITHUB_ENV
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -259,23 +252,22 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build-android -G Ninja \
+          cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_ROOT }}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-33 \
-            -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
-            -DQT_HOST_PATH=$QT_HOST_PATH_DIR \
+            -DANDROID_PLATFORM=android-34 \
+            -DQT_HOST_PATH=${{ env.QT_HOST_PATH }} \
             -DQT_ANDROID_BUILD_ALL_ABIS=OFF
 
       - name: Build APK
-        run: cmake --build build-android --target apk
+        run: cmake --build build --target apk
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CeriumNotes-android
-          path: build-android/android-build/build/outputs/apk/release/*.apk
+          path: build/android-build/build/outputs/apk/release/*.apk
 
   build-ios:
     name: Build (iOS)
@@ -311,36 +303,29 @@ jobs:
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
           cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
 
-      - name: Install Qt (Host)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.8.0'
-          target: 'desktop'
-      - name: Save Host Qt Path
-        run: echo "QT_HOST_PATH_DIR=${Qt6_DIR%/lib/cmake/Qt6}" >> $GITHUB_ENV
-
       - name: Install Qt (iOS)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.8.0'
-          target: 'ios'
+        run: |
+          python3 -m pip install aqtinstall --break-system-packages
+          python3 -m aqt install-qt mac desktop 6.8.0 clang_64 -m qtdeclarative qtshadertools qttools --outputdir ${{ runner.workspace }}/Qt
+          python3 -m aqt install-qt mac ios 6.8.0 -m qtdeclarative qtshadertools qttools --outputdir ${{ runner.workspace }}/Qt
+          echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/ios" >> $GITHUB_ENV
+          echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/macos" >> $GITHUB_ENV
 
       - name: Configure CMake
         run: |
-          cmake -B build-ios -G Xcode \
+          cmake -B build -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
-            -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
-            -DQT_HOST_PATH=$QT_HOST_PATH_DIR
+            -DQT_HOST_PATH=${{ env.QT_HOST_PATH }}
 
       - name: Build
-        run: cmake --build build-ios --config Release
+        run: cmake --build build --config Release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CeriumNotes-ios
-          path: build-ios/Release-iphoneos/*.ipa
+          path: build/Release-iphoneos/*.ipa
 
   release:
     name: Create Pre-Release
