@@ -4,9 +4,11 @@
 #include <QImage>
 #include <QMutex>
 
+#ifndef ANDROID
 extern "C" {
 #include <mupdf/fitz.h>
 }
+#endif
 
 class PdfEngine {
 public:
@@ -23,8 +25,10 @@ public:
     QImage renderTile(int pageNum, int x, int y, int width, int height, float scale);
 
 private:
+#ifndef ANDROID
     fz_context* m_ctx = nullptr;
     fz_document* m_doc = nullptr;
+#endif
     mutable QMutex m_mutex;
 
     void initContext();

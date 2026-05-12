@@ -2,7 +2,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <csignal>
+#ifndef ANDROID
 #include <execinfo.h>
+#endif
 #include <unistd.h>
 
 namespace Cerium {
@@ -14,10 +16,14 @@ static void handle_signal(int sig) {
     fprintf(stderr, "\n--- CNOTE CRASH DUMP (Signal %d) ---\n", sig);
     
     // Get void*'s for all entries on the stack
+#ifndef ANDROID
     size = backtrace(array, 32);
 
     // Print out all the frames to stderr
     backtrace_symbols_fd(array, size, STDERR_FILENO);
+#else
+    fprintf(stderr, "Backtrace not available on this platform\n");
+#endif
     
     fprintf(stderr, "------------------------------------\n");
     

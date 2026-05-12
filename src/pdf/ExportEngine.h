@@ -3,7 +3,9 @@
 #include <vector>
 #include <QSizeF>
 #include "ink/Stroke.h"
+#ifndef ANDROID
 #include <mupdf/fitz.h>
+#endif
 
 class ExportEngine {
 public:

@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
+
+set(QT_ANDROID_MIN_SDK_VERSION 24)
+set(QT_ANDROID_TARGET_SDK_VERSION 34)
+set(QT_ANDROID_BUILD_TOOLS_REVISION 34.0.0)
+
 project(CeriumNotes LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -11,7 +16,9 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(MUPDF REQUIRED mupdf)
+if(NOT ANDROID)
+    pkg_check_modules(MUPDF REQUIRED mupdf)
+endif()
 
 qt_add_executable(CNotes
     src/main.cpp
@@ -65,8 +72,11 @@ target_link_libraries(CNotes PRIVATE
     Qt6::Gui
     Qt6::Quick
     Qt6::Qml
-    ${MUPDF_LIBRARIES}
 )
+
+if(NOT ANDROID)
+    target_link_libraries(CNotes PRIVATE ${MUPDF_LIBRARIES})
+endif()
 
 add_executable(TestInk
     src/ink/test_ink.cpp

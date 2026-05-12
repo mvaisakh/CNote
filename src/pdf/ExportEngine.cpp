@@ -1,7 +1,9 @@
 #include "ExportEngine.h"
 #include "Trace.h"
 #include <QColor>
+#ifndef ANDROID
 #include <mupdf/pdf.h>
+#endif
 
 bool ExportEngine::exportPdf(const QString &sourcePdf, 
                             const QString &targetPdf, 
@@ -9,6 +11,7 @@ bool ExportEngine::exportPdf(const QString &sourcePdf,
                             float verticalSpacing,
                             const QSizeF &canvasSize)
 {
+#ifndef ANDROID
     fz_context *ctx = fz_new_context(nullptr, nullptr, FZ_STORE_DEFAULT);
     if (!ctx) return false;
     fz_register_document_handlers(ctx);
@@ -99,4 +102,7 @@ bool ExportEngine::exportPdf(const QString &sourcePdf,
     if (doc) pdf_drop_document(ctx, doc);
     fz_drop_context(ctx);
     return true;
+#else
+    return false;
+#endif
 }
