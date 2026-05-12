@@ -1,5 +1,6 @@
 #include "PdfEngine.h"
 #include <QDebug>
+#include "Trace.h"
 
 PdfEngine::PdfEngine()
 {
@@ -35,14 +36,14 @@ static fz_locks_context g_mupdf_locks = {
 
 void PdfEngine::initContext()
 {
-    printf("PdfEngine: Initializing context with locks...\n");
+    CN_TRACE("Initializing context with locks...");
     m_ctx = fz_new_context(nullptr, &g_mupdf_locks, FZ_STORE_DEFAULT);
     if (!m_ctx) {
-        printf("PdfEngine: FAILED to initialize context\n");
+        CN_TRACE("FAILED to initialize context");
         return;
     }
     fz_register_document_handlers(m_ctx);
-    printf("PdfEngine: Context initialized: %p\n", (void*)m_ctx);
+    CN_TRACE("Context initialized: %p", (void*)m_ctx);
 }
 
 bool PdfEngine::loadDocument(const std::string& path)
@@ -52,13 +53,13 @@ bool PdfEngine::loadDocument(const std::string& path)
 
     if (!m_ctx) return false;
 
-    printf("PdfEngine: Opening document: %s\n", path.c_str());
+    CN_TRACE("Opening document: %s", path.c_str());
     fz_try(m_ctx) {
         m_doc = fz_open_document(m_ctx, path.c_str());
-        printf("PdfEngine: Document opened: %p\n", (void*)m_doc);
+        CN_TRACE("Document opened: %p", (void*)m_doc);
     }
     fz_catch(m_ctx) {
-        printf("PdfEngine: FAILED to open document\n");
+        CN_TRACE("FAILED to open document");
         return false;
     }
 
@@ -110,17 +111,17 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
 {
     QMutexLocker locker(&m_mutex);
     if (!m_ctx) {
-        qWarning() << "PdfEngine: No context";
+        CN_TRACE("No context");
         return QImage();
     }
     if (!m_doc) {
-        qWarning() << "PdfEngine: No document loaded";
+        CN_TRACE("No document loaded");
         return QImage();
     }
 
     int count = fz_count_pages(m_ctx, m_doc);
     if (pageNum < 0 || pageNum >= count) {
-        qWarning() << "PdfEngine: Invalid page number" << pageNum;
+        CN_TRACE("Invalid page number %d", pageNum);
         return QImage();
     }
 
@@ -133,18 +134,18 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
     QImage image;
 
     fz_try(m_ctx) {
-        printf("PdfEngine: Loading page %d...\n", pageNum);
+        CN_TRACE("Loading page %d...", pageNum);
         page = fz_load_page(m_ctx, m_doc, pageNum);
         
         fz_matrix ctm = fz_scale(scale, scale);
         fz_irect bbox = fz_make_irect(x, y, x + width, y + height);
         
-        printf("PdfEngine: Creating pixmap %dx%d...\n", width, height);
+        CN_TRACE("Creating pixmap %dx%d...", width, height);
         pix = fz_new_pixmap_with_bbox(m_ctx, fz_device_rgb(m_ctx), bbox, nullptr, 0);
         if (pix) {
             fz_clear_pixmap_with_value(m_ctx, pix, 255);
             
-            printf("PdfEngine: Drawing page...\n");
+            CN_TRACE("Drawing page...");
             fz_device* dev = fz_new_draw_device(m_ctx, ctm, pix);
             fz_run_page(m_ctx, page, dev, ctm, nullptr);
             fz_close_device(m_ctx, dev);
@@ -156,7 +157,7 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
             int n = fz_pixmap_components(m_ctx, pix);
             int s = fz_pixmap_stride(m_ctx, pix);
             
-            printf("PdfEngine: Converting to QImage (%dx%d, stride %d)...\n", w, h, s);
+            CN_TRACE("Converting to QImage (%dx%d, stride %d)...", w, h, s);
             if (n == 3) {
                 image = QImage(samples, w, h, s, QImage::Format_RGB888).copy();
             } else if (n == 4) {
@@ -166,10 +167,10 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
             fz_drop_pixmap(m_ctx, pix);
         }
         fz_drop_page(m_ctx, page);
-        printf("PdfEngine: Rendering complete\n");
+        CN_TRACE("Rendering complete");
     }
     fz_catch(m_ctx) {
-        printf("PdfEngine: MuPDF error during rendering: %s\n", fz_caught_message(m_ctx));
+        CN_TRACE("MuPDF error during rendering: %s", fz_caught_message(m_ctx));
         if (pix) fz_drop_pixmap(m_ctx, pix);
         if (page) fz_drop_page(m_ctx, page);
         return QImage();

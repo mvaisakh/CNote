@@ -15,6 +15,7 @@ NoteCanvas::~NoteCanvas() {}
 
 #include <QFileInfo>
 #include <QDebug>
+#include "Trace.h"
 
 void NoteCanvas::setPdfPath(const QString& path)
 {
@@ -23,10 +24,10 @@ void NoteCanvas::setPdfPath(const QString& path)
     
     QFileInfo checkFile(path);
     if (checkFile.exists() && checkFile.isFile()) {
-        qDebug() << "NoteCanvas: Loading PDF:" << path;
+        CN_TRACE("Loading PDF: %s", path.toLocal8Bit().constData());
         m_pdfEngine.loadDocument(path.toStdString());
     } else {
-        qWarning() << "NoteCanvas: PDF file does not exist or is not a file:" << path;
+        CN_TRACE("PDF file does not exist or is not a file: %s", path.toLocal8Bit().constData());
     }
     
     m_pdfDirty = true;
@@ -125,15 +126,15 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
 
 QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    printf("NoteCanvas: updatePaintNode start\n");
+    CN_TRACE("updatePaintNode start");
     QSGNode *root = oldNode;
     if (!root) {
-        printf("NoteCanvas: Creating new root node\n");
+        CN_TRACE("Creating new root node");
         root = new QSGNode();
     }
 
     if (!window()) {
-        printf("NoteCanvas: No window, aborting\n");
+        CN_TRACE("No window, aborting");
         return root;
     }
 
@@ -142,7 +143,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (root->childCount() > 0) {
         pdfNode = static_cast<QSGSimpleTextureNode*>(root->childAtIndex(0));
     } else {
-        printf("NoteCanvas: Creating PDF node\n");
+        CN_TRACE("Creating PDF node");
         pdfNode = new QSGSimpleTextureNode();
         root->appendChildNode(pdfNode);
     }
@@ -152,7 +153,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (root->childCount() > 1) {
         staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(1));
     } else {
-        printf("NoteCanvas: Creating Static Ink node\n");
+        CN_TRACE("Creating Static Ink node");
         staticNode = new QSGGeometryNode();
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::white);
@@ -166,7 +167,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (root->childCount() > 2) {
         activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(2));
     } else {
-        printf("NoteCanvas: Creating Active Ink node\n");
+        CN_TRACE("Creating Active Ink node");
         activeNode = new QSGGeometryNode();
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::red);
@@ -176,18 +177,18 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
 
     if (m_pdfDirty && !m_pdfPath.isEmpty()) {
-        printf("NoteCanvas: Rendering PDF tile...\n");
+        CN_TRACE("Rendering PDF tile...");
         QImage img = m_pdfEngine.renderTile(0, 0, 0, (int)width(), (int)height(), 1.0f);
         if (!img.isNull()) {
-            printf("NoteCanvas: Uploading texture %dx%d...\n", img.width(), img.height());
+            CN_TRACE("Uploading texture %dx%d...", img.width(), img.height());
             QSGTexture *texture = window()->createTextureFromImage(img);
             if (texture) {
                 pdfNode->setOwnsTexture(true);
                 pdfNode->setTexture(texture);
                 pdfNode->setRect(0, 0, width(), height());
-                printf("NoteCanvas: Texture uploaded\n");
+                CN_TRACE("Texture uploaded");
             } else {
-                printf("NoteCanvas: FAILED to create texture\n");
+                CN_TRACE("FAILED to create texture");
             }
         }
         m_pdfDirty = false;
