@@ -127,7 +127,7 @@ jobs:
           version: '6.8.0'
           host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
           target: 'desktop'
-          arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2019_arm64' || 'win64_msvc2019_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'linux_gcc_64') }}
+          arch: ${{ matrix.os == 'windows-latest' && (matrix.target_arch == 'arm64' && 'win64_msvc2022_arm64_cross_compiled' || 'win64_msvc2022_64') || matrix.os == 'macos-latest' && 'clang_64' || (matrix.target_arch == 'arm64' && 'linux_arm64' || 'linux_gcc_64') }}
 
       - name: Install Qt (Linux ARM64 Apt)
         if: matrix.platform == 'linux' && matrix.target_arch == 'arm64'
