@@ -11,6 +11,8 @@ Window {
     title: qsTr("CeriumNotes")
     color: "#121212"
 
+    required property string initialPdf
+
     Row {
         anchors.fill: parent
 
@@ -25,7 +27,7 @@ Window {
             NoteCanvas {
                 id: canvas
                 anchors.fill: parent
-                pdfPath: "" // Load later
+                pdfPath: initialPdf
             }
 
             Toolbar {

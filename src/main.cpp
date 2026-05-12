@@ -10,6 +10,15 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CeriumNotes");
 
     QQmlApplicationEngine engine;
+    
+    QString initialPdf;
+    if (argc > 1) {
+        initialPdf = QString::fromLocal8Bit(argv[1]);
+    }
+    QVariantMap initialProperties;
+    initialProperties[QStringLiteral("initialPdf")] = initialPdf;
+    engine.setInitialProperties(initialProperties);
+
     const QUrl url(u"qrc:/CeriumNotes/qml/main.qml"_qs);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
