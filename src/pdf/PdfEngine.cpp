@@ -86,7 +86,24 @@ QSizeF PdfEngine::pageSize(int pageNum) const
 QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, float scale)
 {
     QMutexLocker locker(&m_mutex);
-    if (!m_ctx || !m_doc) return QImage();
+    if (!m_ctx) {
+        qWarning() << "PdfEngine: No context";
+        return QImage();
+    }
+    if (!m_doc) {
+        qWarning() << "PdfEngine: No document loaded";
+        return QImage();
+    }
+
+    int count = fz_count_pages(m_ctx, m_doc);
+    if (pageNum < 0 || pageNum >= count) {
+        qWarning() << "PdfEngine: Invalid page number" << pageNum;
+        return QImage();
+    }
+
+    if (width <= 0 || height <= 0) {
+        return QImage();
+    }
 
     fz_pixmap* pix = nullptr;
     fz_page* page = nullptr;
@@ -99,30 +116,31 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
         fz_irect bbox = fz_make_irect(x, y, x + width, y + height);
         
         pix = fz_new_pixmap_with_bbox(m_ctx, fz_device_rgb(m_ctx), bbox, nullptr, 0);
-        fz_clear_pixmap_with_value(m_ctx, pix, 255);
-        
-        fz_device* dev = fz_new_draw_device(m_ctx, ctm, pix);
-        fz_run_page(m_ctx, page, dev, ctm, nullptr);
-        fz_close_device(m_ctx, dev);
-        fz_drop_device(m_ctx, dev);
-        
-        // Convert pixmap to QImage
-        // Pixmap data is RGB, QImage::Format_RGB888
-        unsigned char* samples = fz_pixmap_samples(m_ctx, pix);
-        int w = fz_pixmap_width(m_ctx, pix);
-        int h = fz_pixmap_height(m_ctx, pix);
-        int n = fz_pixmap_components(m_ctx, pix);
-        
-        if (n == 3) {
-            image = QImage(samples, w, h, w * 3, QImage::Format_RGB888).copy();
-        } else if (n == 4) {
-            image = QImage(samples, w, h, w * 4, QImage::Format_RGBA8888).copy();
+        if (pix) {
+            fz_clear_pixmap_with_value(m_ctx, pix, 255);
+            
+            fz_device* dev = fz_new_draw_device(m_ctx, ctm, pix);
+            fz_run_page(m_ctx, page, dev, ctm, nullptr);
+            fz_close_device(m_ctx, dev);
+            fz_drop_device(m_ctx, dev);
+            
+            unsigned char* samples = fz_pixmap_samples(m_ctx, pix);
+            int w = fz_pixmap_width(m_ctx, pix);
+            int h = fz_pixmap_height(m_ctx, pix);
+            int n = fz_pixmap_components(m_ctx, pix);
+            
+            if (n == 3) {
+                image = QImage(samples, w, h, w * 3, QImage::Format_RGB888).copy();
+            } else if (n == 4) {
+                image = QImage(samples, w, h, w * 4, QImage::Format_RGBA8888).copy();
+            }
+            
+            fz_drop_pixmap(m_ctx, pix);
         }
-        
-        fz_drop_pixmap(m_ctx, pix);
         fz_drop_page(m_ctx, page);
     }
     fz_catch(m_ctx) {
+        qWarning() << "PdfEngine: MuPDF error during rendering";
         if (pix) fz_drop_pixmap(m_ctx, pix);
         if (page) fz_drop_page(m_ctx, page);
         return QImage();
