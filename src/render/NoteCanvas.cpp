@@ -118,21 +118,54 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // Layer 1: Static Ink
     QSGGeometryNode *staticNode = nullptr;
-    if (root->childCount() > 1) {
-        staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(1));
+    QSGGeometryNode *activeNode = nullptr;
+    for (int i = 0; i < root->childCount(); ++i) {
+        if (root->childAtIndex(i)->type() == QSGNode::GeometryNodeType) {
+            staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(i));
+            // Assuming the first GeometryNode is static, second is active
+            if (i + 1 < root->childCount() && root->childAtIndex(i+1)->type() == QSGNode::GeometryNodeType) {
+                activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(i+1));
+            }
+            break;
+        }
     }
 
-    // Layer 2: Active Ink
-    QSGGeometryNode *activeNode = nullptr;
-    if (root->childCount() > 2) {
-        activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(2));
+    if (!staticNode) {
+        CN_TRACE("Creating Static Ink node");
+        staticNode = new QSGGeometryNode();
+        staticNode->setFlag(QSGNode::OwnsGeometry);
+        staticNode->setFlag(QSGNode::OwnsMaterial);
+        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+        geo->setDrawingMode(QSGGeometry::DrawLineStrip);
+        geo->setLineWidth(3.0f);
+        staticNode->setGeometry(geo);
+        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+        mat->setColor(Qt::white);
+        mat->setFlag(QSGMaterial::Blending, true);
+        staticNode->setMaterial(mat);
+        root->appendChildNode(staticNode);
+    }
+
+    if (!activeNode) {
+        CN_TRACE("Creating Active Ink node");
+        activeNode = new QSGGeometryNode();
+        activeNode->setFlag(QSGNode::OwnsGeometry);
+        activeNode->setFlag(QSGNode::OwnsMaterial);
+        QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
+        geo->setDrawingMode(QSGGeometry::DrawLineStrip);
+        geo->setLineWidth(3.0f);
+        activeNode->setGeometry(geo);
+        QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+        mat->setColor(Qt::red); // Red for active stroke
+        mat->setFlag(QSGMaterial::Blending, true);
+        activeNode->setMaterial(mat);
+        root->appendChildNode(activeNode);
     }
 
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
         CN_TRACE("Rendering PDF tile...");
         QImage img = m_pdfEngine.renderTile(0, 0, 0, m_renderSize.width(), m_renderSize.height(), 1.0f);
         if (!img.isNull()) {
-            CN_TRACE("Uploading texture %dx%d...", img.width(), img.height());
             QSGTexture *texture = window()->createTextureFromImage(img);
             if (texture) {
                 if (!pdfNode) {
@@ -142,78 +175,46 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
                 pdfNode->setOwnsTexture(true);
                 pdfNode->setTexture(texture);
                 pdfNode->setRect(0, 0, m_renderSize.width(), m_renderSize.height());
-                CN_TRACE("Texture uploaded");
-            } else {
-                CN_TRACE("FAILED to create texture");
             }
         }
         m_pdfDirty = false;
     }
 
-    // For now, let's keep ink layers out until we have actual stroke data to avoid prepareAlphaBatches crash
-    if (m_strokesDirty && !m_finishedStrokes.empty()) {
-        if (!staticNode) {
-            staticNode = new QSGGeometryNode();
-            staticNode->setFlag(QSGNode::OwnsGeometry);
-            staticNode->setFlag(QSGNode::OwnsMaterial);
-            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-            staticNode->setGeometry(geo);
-            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-            mat->setColor(Qt::white);
-            mat->setFlag(QSGMaterial::Blending, true);
-            staticNode->setMaterial(mat);
-            root->appendChildNode(staticNode);
-        }
-        // ... update geometry logic ...
-        m_strokesDirty = false;
-    }
-
     if (m_activeStrokeDirty) {
-        if (!activeNode) {
-            activeNode = new QSGGeometryNode();
-            activeNode->setFlag(QSGNode::OwnsGeometry);
-            activeNode->setFlag(QSGNode::OwnsMaterial);
-            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-            activeNode->setGeometry(geo);
-            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-            mat->setColor(Qt::red);
-            mat->setFlag(QSGMaterial::Blending, true);
-            activeNode->setMaterial(mat);
-            root->appendChildNode(activeNode);
-        }
-
-        if (m_activePoints.size() > 1) {
-            QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
-            geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geometry->setLineWidth(2.0f);
-            
-            QSGGeometry::Point2D *vertices = geometry->vertexDataAsPoint2D();
+        if (!m_activePoints.empty()) {
+            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), m_activePoints.size());
+            geo->setDrawingMode(QSGGeometry::DrawLineStrip);
+            geo->setLineWidth(3.0f);
+            QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
             for (size_t i = 0; i < m_activePoints.size(); ++i) {
-                vertices[i].set(m_activePoints[i].x, m_activePoints[i].y);
+                v[i].set(m_activePoints[i].x, m_activePoints[i].y);
             }
-            
-            activeNode->setGeometry(geometry);
+            activeNode->setGeometry(geo);
+            CN_TRACE("Active stroke: %zu points", m_activePoints.size());
         } else {
-            // Use empty geometry instead of nullptr
-            QSGGeometry *empty = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0);
-            activeNode->setGeometry(empty);
+            activeNode->setGeometry(new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 0));
         }
         m_activeStrokeDirty = false;
     }
 
     if (m_strokesDirty) {
-        if (!m_finishedStrokes.empty()) {
-            const auto& lastStroke = m_finishedStrokes.back();
-            QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), lastStroke.points.size());
-            geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geometry->setLineWidth(2.0f);
-            
-            QSGGeometry::Point2D *vertices = geometry->vertexDataAsPoint2D();
-            for (size_t i = 0; i < lastStroke.points.size(); ++i) {
-                vertices[i].set(lastStroke.points[i].x, lastStroke.points[i].y);
+        // Simple implementation: Combine all strokes into one geometry for now
+        size_t totalPoints = 0;
+        for (const auto& s : m_finishedStrokes) totalPoints += s.points.size();
+        
+        if (totalPoints > 0) {
+            // Note: DrawLineStrip won't work well for disconnected strokes in one geometry.
+            // For this preview, we'll just show the last stroke to keep it simple and stable.
+            const auto& s = m_finishedStrokes.back();
+            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), s.points.size());
+            geo->setDrawingMode(QSGGeometry::DrawLineStrip);
+            geo->setLineWidth(3.0f);
+            QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
+            for (size_t i = 0; i < s.points.size(); ++i) {
+                v[i].set(s.points[i].x, s.points[i].y);
             }
-            staticNode->setGeometry(geometry);
-            staticNode->setFlag(QSGNode::OwnsGeometry);
+            staticNode->setGeometry(geo);
+            CN_TRACE("Static ink updated: %zu strokes", m_finishedStrokes.size());
         }
         m_strokesDirty = false;
     }
