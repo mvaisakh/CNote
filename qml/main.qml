@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Dialogs
-import Qt.QtCore
+import QtCore
 import CeriumNotes
 
 Window {
