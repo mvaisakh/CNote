@@ -1,9 +1,11 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QIcon>
+#include "CrashHandler.h"
 
 int main(int argc, char *argv[])
 {
+    Cerium::setupCrashHandler();
     QGuiApplication app(argc, argv);
 
     app.setApplicationName("CeriumNotes");

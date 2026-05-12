@@ -17,7 +17,10 @@ qt_add_executable(CNotes
     src/main.cpp
     src/pdf/PdfEngine.cpp
     src/ink/InkProcessor.cpp
+    src/core/CrashHandler.cpp
 )
+
+target_link_options(CNotes PRIVATE -rdynamic)
 
 qt_add_qml_module(CNotes
     URI CeriumNotes
