@@ -95,11 +95,12 @@ jobs:
         mkdir -p third_party/mupdf/lib
         cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
         cp mupdf-1.27.2-source/build/release/libmupdf.a third_party/mupdf/lib/
-      id: cache-mupdf
+    - id: cache-mupdf
+      if: matrix.os == 'windows-latest'
       uses: actions/cache@v4
       with:
         path: third_party/mupdf
-        key: ${{ runner.os }}-mupdf-1.27.2
+        key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2
 
     - name: Build MuPDF (Windows)
       if: matrix.os == 'windows-latest' && steps.cache-mupdf.outputs.cache-hit != 'true'
