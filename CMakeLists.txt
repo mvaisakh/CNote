@@ -24,10 +24,16 @@ qt_add_qml_module(CNotes
     VERSION 1.0
     QML_FILES
         qml/main.qml
+    SOURCES
+        src/render/NoteCanvas.h
+        src/render/NoteCanvas.cpp
+    DEPENDENCIES
+        Quick
 )
 
 target_include_directories(CNotes PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render
     ${MUPDF_INCLUDE_DIRS}
 )
 
