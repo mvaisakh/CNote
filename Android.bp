@@ -1,0 +1,35 @@
+cc_binary {
+    name: "CeriumNotes",
+    srcs: [
+        "src/*.cpp",
+    ],
+    include_dirs: [
+        "external/qt6/include",
+        "external/qt6/include/QtCore",
+        "external/qt6/include/QtGui",
+        "external/qt6/include/QtQml",
+        "external/qt6/include/QtQuick",
+    ],
+    shared_libs: [
+        "libQt6Core",
+        "libQt6Gui",
+        "libQt6Widgets",
+        "libQt6Qml",
+        "libQt6Quick",
+        "liblog",
+    ],
+    cflags: [
+        "-fexceptions",
+        "-DQT_CORE_LIB",
+        "-DQT_GUI_LIB",
+        "-DQT_QUICK_LIB",
+    ],
+    cppflags: [
+        "-std=c++17",
+    ],
+    android: {
+        shared_libs: [
+            "libandroid",
+        ],
+    },
+}
