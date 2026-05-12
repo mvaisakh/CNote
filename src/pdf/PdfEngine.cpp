@@ -138,20 +138,18 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
         page = fz_load_page(m_ctx, m_doc, pageNum);
         fz_rect page_rect = fz_bound_page(m_ctx, page);
         
+        // 1. Create a matrix that scales AND translates the page origin to (0,0)
         fz_matrix ctm = fz_scale(scale, scale);
-        // Calculate the actual pixel bbox of the requested tile, relative to page origin
-        fz_irect bbox = fz_make_irect(page_rect.x0 * scale + x, 
-                                      page_rect.y0 * scale + y, 
-                                      page_rect.x0 * scale + x + width, 
-                                      page_rect.y0 * scale + y + height);
+        ctm = fz_pre_translate(ctm, -page_rect.x0 - (x/scale), -page_rect.y0 - (y/scale));
         
-        CN_TRACE("Creating pixmap %dx%d with offset (%d, %d)...", width, height, bbox.x0, bbox.y0);
-        pix = fz_new_pixmap_with_bbox(m_ctx, fz_device_rgb(m_ctx), bbox, nullptr, 0);
+        // 2. Create a standard pixmap starting at (0,0)
+        CN_TRACE("Creating pixmap %dx%d...", width, height);
+        pix = fz_new_pixmap(m_ctx, fz_device_rgb(m_ctx), width, height, nullptr, 0);
         if (pix) {
             fz_clear_pixmap_with_value(m_ctx, pix, 255);
             
-            CN_TRACE("Drawing page...");
-            fz_device* dev = fz_new_draw_device(m_ctx, ctm, pix);
+            CN_TRACE("Drawing page with explicit alignment...");
+            fz_device* dev = fz_new_draw_device(m_ctx, fz_identity, pix);
             fz_run_page(m_ctx, page, dev, ctm, nullptr);
             fz_close_device(m_ctx, dev);
             fz_drop_device(m_ctx, dev);
