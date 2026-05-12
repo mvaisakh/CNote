@@ -52,8 +52,11 @@ else()
     set(PLATFORM "linux")
 endif()
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version" BASE_VERSION)
+string(STRIP "${BASE_VERSION}" BASE_VERSION)
+
 cmake_host_system_information(RESULT HOSTNAME_RES QUERY HOSTNAME)
-set(APP_VERSION_STR "v0.1-${PLATFORM}-${GIT_HASH}-${HOSTNAME_RES}${GIT_DIRTY}")
+set(APP_VERSION_STR "${BASE_VERSION}-${PLATFORM}-${GIT_HASH}-${HOSTNAME_RES}${GIT_DIRTY}")
 message(STATUS "Building CeriumNotes version: ${APP_VERSION_STR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)

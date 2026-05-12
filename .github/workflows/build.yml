@@ -154,14 +154,27 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate Tag
+      id: tag
+      run: |
+        VERSION=$(cat version | tr -d '\n')
+        SHA=$(git rev-parse --short HEAD)
+        TAG="${VERSION}-${SHA}"
+        echo "TAG=${TAG}" >> $GITHUB_ENV
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
     - name: Download All Artifacts
       uses: actions/download-artifact@v4
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v0.1-alpha
-        name: CeriumNotes v0.1-alpha Pre-Release
+        tag_name: ${{ env.TAG }}
+        name: CeriumNotes ${{ env.TAG }} Pre-Release
         prerelease: true
         files: |
           CeriumNotes-*/*
