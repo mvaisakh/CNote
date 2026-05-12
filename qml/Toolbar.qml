@@ -8,6 +8,8 @@ Rectangle {
     color: "#2a2a2a"
     radius: 12
     opacity: 0.95
+    
+    property var canvas
 
     RowLayout {
         anchors.fill: parent
@@ -18,21 +20,24 @@ Rectangle {
             text: "Pen"
             flat: true
             font.pixelSize: 16
-            palette.buttonText: "white"
+            palette.buttonText: canvas.currentTool === 0 ? "white" : "#aaaaaa"
+            onClicked: canvas.currentTool = 0
         }
 
         Button {
             text: "Highlighter"
             flat: true
             font.pixelSize: 16
-            palette.buttonText: "#aaaaaa"
+            palette.buttonText: canvas.currentTool === 1 ? "white" : "#aaaaaa"
+            onClicked: canvas.currentTool = 1
         }
 
         Button {
             text: "Eraser"
             flat: true
             font.pixelSize: 16
-            palette.buttonText: "#aaaaaa"
+            palette.buttonText: canvas.currentTool === 2 ? "white" : "#aaaaaa"
+            onClicked: canvas.currentTool = 2
         }
 
         Item { Layout.fillWidth: true }
@@ -40,18 +45,31 @@ Rectangle {
         Rectangle {
             width: 30; height: 30; radius: 15
             color: "white"
-            border.color: "grey"
-            border.width: 1
+            border.color: canvas.penColor === color ? "cyan" : "grey"
+            border.width: canvas.penColor === color ? 2 : 1
+            TapHandler {
+                onTapped: canvas.penColor = "white"
+            }
         }
         
         Rectangle {
             width: 30; height: 30; radius: 15
             color: "#ff5555"
+            border.color: "cyan"
+            border.width: canvas.penColor === color ? 2 : 0
+            TapHandler {
+                onTapped: canvas.penColor = "#ff5555"
+            }
         }
 
         Rectangle {
             width: 30; height: 30; radius: 15
             color: "#55ff55"
+            border.color: "cyan"
+            border.width: canvas.penColor === color ? 2 : 0
+            TapHandler {
+                onTapped: canvas.penColor = "#55ff55"
+            }
         }
     }
 }

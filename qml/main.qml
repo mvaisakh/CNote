@@ -31,6 +31,8 @@ Window {
             }
 
             Toolbar {
+                id: toolbar
+                canvas: canvas
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.topMargin: 20

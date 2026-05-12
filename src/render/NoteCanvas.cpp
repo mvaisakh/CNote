@@ -4,7 +4,7 @@
 #include <QQuickWindow>
 #include <QMouseEvent>
 
-NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0)
+NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0), m_penColor(Qt::white), m_currentTool(Pen)
 {
     setFlag(ItemHasContents, true);
     setAcceptedMouseButtons(Qt::LeftButton);
@@ -49,41 +49,41 @@ void NoteCanvas::mouseReleaseEvent(QMouseEvent *) {}
 
 bool NoteCanvas::event(QEvent *event)
 {
-    if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletMove || event->type() == QEvent::TabletRelease) {
-        QTabletEvent *tablet = static_cast<QTabletEvent *>(event);
-        switch (event->type()) {
-        case QEvent::TabletPress:
-            m_activePoints.clear();
-            [[fallthrough]];
-        case QEvent::TabletMove: {
-            InkPoint p = { 
-                (float)tablet->position().x(), 
-                (float)tablet->position().y(), 
-                (float)tablet->pressure(), 
-                (float)tablet->xTilt(), 
-                (long long)tablet->timestamp() 
-            };
-            m_activePoints.push_back(p);
-            m_activeStrokeDirty = true;
-            update();
-            break;
+    if (event->type() == QEvent::TabletPress || event->type() == QEvent::MouseButtonPress) {
+        m_activePoints.clear();
+        m_activeStrokeDirty = true;
+        update();
+        return true;
+    } else if (event->type() == QEvent::TabletMove || event->type() == QEvent::MouseMove) {
+        QPointF pos;
+        float pressure = 0.5f;
+        if (event->type() == QEvent::TabletMove) {
+            QTabletEvent *te = static_cast<QTabletEvent*>(event);
+            pos = te->position();
+            pressure = te->pressure();
+        } else {
+            QMouseEvent *me = static_cast<QMouseEvent*>(event);
+            if (!(me->buttons() & Qt::LeftButton)) return QQuickItem::event(event);
+            pos = me->position();
         }
-        case QEvent::TabletRelease:
-            if (!m_activePoints.empty()) {
-                Stroke s;
-                s.points = m_activePoints;
-                s.color = Qt::white;
-                s.width = 2.0f;
-                m_finishedStrokes.push_back(s);
-            }
-            m_activePoints.clear();
-            m_activeStrokeDirty = true;
-            m_strokesDirty = true;
-            update();
-            break;
-        default:
-            break;
+        
+        InkPoint p = { (float)pos.x(), (float)pos.y(), pressure, 0.0f, 0 };
+        m_activePoints.push_back(p);
+        m_activeStrokeDirty = true;
+        update();
+        return true;
+    } else if (event->type() == QEvent::TabletRelease || event->type() == QEvent::MouseButtonRelease) {
+        if (!m_activePoints.empty()) {
+            Stroke s;
+            s.points = m_activePoints;
+            s.color = m_penColor;
+            s.width = (m_currentTool == Highlighter) ? 15.0f : 2.0f;
+            m_finishedStrokes.push_back(s);
         }
+        m_activePoints.clear();
+        m_activeStrokeDirty = true;
+        m_strokesDirty = true;
+        update();
         return true;
     }
     return QQuickItem::event(event);
@@ -140,10 +140,12 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         geo->setLineWidth(3.0f);
         staticNode->setGeometry(geo);
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(Qt::white);
+        mat->setColor(m_penColor);
         mat->setFlag(QSGMaterial::Blending, true);
         staticNode->setMaterial(mat);
         root->appendChildNode(staticNode);
+    } else {
+        static_cast<QSGFlatColorMaterial*>(staticNode->material())->setColor(m_penColor);
     }
 
     if (!activeNode) {
@@ -156,10 +158,12 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         geo->setLineWidth(3.0f);
         activeNode->setGeometry(geo);
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-        mat->setColor(Qt::red); // Red for active stroke
+        mat->setColor(m_penColor); // Use current pen color
         mat->setFlag(QSGMaterial::Blending, true);
         activeNode->setMaterial(mat);
         root->appendChildNode(activeNode);
+    } else {
+        static_cast<QSGFlatColorMaterial*>(activeNode->material())->setColor(m_penColor);
     }
 
     if (m_pdfDirty && !m_pdfPath.isEmpty() && !m_renderSize.isEmpty()) {
