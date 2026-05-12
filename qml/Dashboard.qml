@@ -9,7 +9,7 @@ Rectangle {
     property var fileManager
     signal openPdf(string path)
     signal importRequested()
-    signal newNoteRequested()
+    signal newNoteRequested(string name)
 
     property var importedFiles: []
 
@@ -17,6 +17,34 @@ Rectangle {
 
     function refresh() {
         importedFiles = fileManager.getImportedFiles()
+    }
+
+    Dialog {
+        id: nameDialog
+        title: "Name your Note"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        Column {
+            spacing: 10
+            width: parent.width
+            Text { text: "Enter note name:"; color: "white" }
+            TextField {
+                id: nameField
+                width: 250
+                placeholderText: "Meeting Notes..."
+                focus: true
+                color: "white"
+                background: Rectangle { color: "#333"; radius: 4 }
+                onAccepted: nameDialog.accept()
+            }
+        }
+
+        onAccepted: {
+            dashboardRoot.newNoteRequested(nameField.text)
+            nameField.text = ""
+        }
     }
 
     ColumnLayout {
@@ -38,7 +66,7 @@ Rectangle {
             
             Button {
                 text: "+ New Note"
-                onClicked: dashboardRoot.newNoteRequested()
+                onClicked: nameDialog.open()
                 background: Rectangle {
                     color: "#00adb5"
                     radius: 8

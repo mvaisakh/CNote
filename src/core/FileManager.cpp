@@ -30,10 +30,19 @@ QString FileManager::importPdf(const QUrl &fileUrl)
     return QString();
 }
 
-QString FileManager::createNewNote()
+QString FileManager::createNewNote(const QString &name)
 {
-    QString targetName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_NewNote.note";
-    return m_basePath + "/" + targetName;
+    QString cleanName = name.isEmpty() ? "Untitled" : name;
+    QString targetName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_" + cleanName + ".note";
+    QString targetPath = m_basePath + "/" + targetName;
+    
+    // Create the empty anchor file
+    QFile file(targetPath);
+    if (file.open(QIODevice::WriteOnly)) {
+        file.close();
+        return targetPath;
+    }
+    return QString();
 }
 
 QString FileManager::getStoragePath() const
