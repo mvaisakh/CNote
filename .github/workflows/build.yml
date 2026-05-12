@@ -256,7 +256,10 @@ jobs:
           curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
           tar -xzf mupdf.tar.gz
           cd mupdf-1.27.2-source
-          make -j$(nproc) libs OS=ios ARCH=arm64
+          make -j$(sysctl -n hw.ncpu) libs OS=ios ARCH=arm64 \
+            CC="$(xcrun -sdk iphoneos -find clang) -isysroot $(xcrun -sdk iphoneos --show-sdk-path)" \
+            AR="$(xcrun -sdk iphoneos -find ar)" \
+            RANLIB="$(xcrun -sdk iphoneos -find ranlib)"
           cd ..
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
