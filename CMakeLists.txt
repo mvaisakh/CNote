@@ -119,6 +119,8 @@ if(ENABLE_PDF)
 endif()
 
 qt_add_executable(CNotes
+    MACOSX_BUNDLE
+    WIN32_EXECUTABLE
     src/main.cpp
     src/pdf/PdfEngine.cpp
     src/ink/InkProcessor.cpp
