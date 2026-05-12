@@ -91,14 +91,24 @@ if(ENABLE_PDF)
         endif()
     endif()
 
-    if(NOT MUPDF_FOUND AND NOT ANDROID)
-        find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h)
-        find_library(MUPDF_LIBRARY mupdf)
-        if(MUPDF_INCLUDE_DIR AND MUPDF_LIBRARY)
-            set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
-            set(MUPDF_LIBRARIES ${MUPDF_LIBRARY})
-            set(MUPDF_FOUND TRUE)
+    # Prioritize local third_party build for CI/CD consistency
+    find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
+        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/include
+        NO_CACHE)
+    find_library(MUPDF_MAIN_LIBRARY mupdf
+        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/lib
+        NO_CACHE)
+    find_library(MUPDF_THIRD_LIBRARY mupdf-third
+        PATHS ${CMAKE_SOURCE_DIR}/third_party/mupdf/lib
+        NO_CACHE)
+
+    if(MUPDF_INCLUDE_DIR AND MUPDF_MAIN_LIBRARY)
+        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
+        set(MUPDF_LIBRARIES ${MUPDF_MAIN_LIBRARY})
+        if(MUPDF_THIRD_LIBRARY)
+            list(APPEND MUPDF_LIBRARIES ${MUPDF_THIRD_LIBRARY})
         endif()
+        set(MUPDF_FOUND TRUE)
     endif()
     
     if(MUPDF_FOUND)
@@ -168,9 +178,7 @@ target_link_libraries(CNotes PRIVATE
     Qt6::Qml
 )
 
-if(NOT ANDROID)
-    target_link_libraries(CNotes PRIVATE ${MUPDF_LIBRARIES})
-endif()
+target_link_libraries(CNotes PRIVATE ${MUPDF_LIBRARIES})
 
 add_executable(TestInk
     src/ink/test_ink.cpp

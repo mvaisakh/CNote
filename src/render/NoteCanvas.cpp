@@ -414,7 +414,7 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
     
     if (event->points().count() == 1) {
         const QEventPoint &p = event->points().first();
-        if (p.state() == Qt::TouchPointMoved) {
+        if (p.state() == QEventPoint::State::Updated) {
             QPointF delta = p.position() - p.lastPosition();
             m_panOffset += delta;
             m_transformDirty = true;
