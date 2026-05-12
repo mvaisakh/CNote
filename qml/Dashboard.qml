@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 import CNote.Core
 
 Rectangle {
@@ -155,10 +156,20 @@ Rectangle {
                     id: card
                     anchors.fill: parent
                     anchors.margins: 8
-                    color: mouseArea.containsMouse ? "#2AFFFFFF" : "#1AFFFFFF"
+                    color: mouseArea.containsMouse ? "#33FFFFFF" : "#1AFFFFFF"
                     radius: 24
                     border.color: mouseArea.containsMouse ? root.colorPrimary : "#11FFFFFF"
                     border.width: 1
+
+                    // Glass Blur Effect
+                    MultiEffect {
+                        source: card
+                        anchors.fill: card
+                        blurEnabled: true
+                        blur: 0.8
+                        blurMax: 16
+                        z: -1
+                    }
 
                     scale: mouseArea.pressed ? 0.95 : (mouseArea.containsMouse ? 1.05 : 1.0)
                     Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
