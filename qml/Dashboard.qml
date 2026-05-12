@@ -78,15 +78,18 @@ Rectangle {
                         radius: 22
                     }
                 }
-                contentItem: Image {
-                    source: "qrc:/CeriumNotes/icons/add.svg"
-                    width: 24
-                    height: 24
-                    sourceSize: Qt.size(64, 64)
-                    fillMode: Image.PreserveAspectFit
-                    horizontalAlignment: Image.AlignHCenter
-                    verticalAlignment: Image.AlignVCenter
-                    smooth: true
+                contentItem: Item {
+                    implicitWidth: 44
+                    implicitHeight: 44
+                    Image {
+                        anchors.centerIn: parent
+                        width: 22
+                        height: 22
+                        source: "qrc:/CeriumNotes/icons/add.svg"
+                        sourceSize: Qt.size(64, 64)
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                    }
                 }
             }
 
