@@ -14,14 +14,35 @@ PdfEngine::~PdfEngine()
     }
 }
 
+#include <QMutex>
+#include <vector>
+
+static QMutex g_mupdf_mutexes[FZ_LOCK_MAX];
+
+static void lock_mupdf(void *user, int lock) {
+    g_mupdf_mutexes[lock].lock();
+}
+
+static void unlock_mupdf(void *user, int lock) {
+    g_mupdf_mutexes[lock].unlock();
+}
+
+static fz_locks_context g_mupdf_locks = {
+    nullptr,
+    lock_mupdf,
+    unlock_mupdf
+};
+
 void PdfEngine::initContext()
 {
-    m_ctx = fz_new_context(nullptr, nullptr, FZ_STORE_DEFAULT);
+    printf("PdfEngine: Initializing context with locks...\n");
+    m_ctx = fz_new_context(nullptr, &g_mupdf_locks, FZ_STORE_DEFAULT);
     if (!m_ctx) {
-        qCritical() << "Cannot initialize MuPDF context";
+        printf("PdfEngine: FAILED to initialize context\n");
         return;
     }
     fz_register_document_handlers(m_ctx);
+    printf("PdfEngine: Context initialized: %p\n", (void*)m_ctx);
 }
 
 bool PdfEngine::loadDocument(const std::string& path)
@@ -31,11 +52,13 @@ bool PdfEngine::loadDocument(const std::string& path)
 
     if (!m_ctx) return false;
 
+    printf("PdfEngine: Opening document: %s\n", path.c_str());
     fz_try(m_ctx) {
         m_doc = fz_open_document(m_ctx, path.c_str());
+        printf("PdfEngine: Document opened: %p\n", (void*)m_doc);
     }
     fz_catch(m_ctx) {
-        qCritical() << "Failed to open document:" << path.c_str();
+        printf("PdfEngine: FAILED to open document\n");
         return false;
     }
 
