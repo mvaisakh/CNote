@@ -136,9 +136,13 @@ QImage PdfEngine::renderTile(int pageNum, int x, int y, int width, int height, f
     fz_try(m_ctx) {
         CN_TRACE("Loading page %d...", pageNum);
         page = fz_load_page(m_ctx, m_doc, pageNum);
+        fz_rect page_rect = fz_bound_page(m_ctx, page);
         
         fz_matrix ctm = fz_scale(scale, scale);
-        fz_irect bbox = fz_make_irect(x, y, x + width, y + height);
+        // Offset the matrix so that (0,0) in our tile corresponds to (x,y) in the scaled page
+        ctm = fz_pre_translate(ctm, -page_rect.x0, -page_rect.y0);
+        
+        fz_irect bbox = fz_make_irect(0, 0, width, height);
         
         CN_TRACE("Creating pixmap %dx%d...", width, height);
         pix = fz_new_pixmap_with_bbox(m_ctx, fz_device_rgb(m_ctx), bbox, nullptr, 0);
