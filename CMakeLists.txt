@@ -36,6 +36,8 @@ qt_add_qml_module(CNotes
         src/core/FileManager.cpp
         src/core/PersistenceManager.h
         src/core/PersistenceManager.cpp
+        src/pdf/ExportEngine.h
+        src/pdf/ExportEngine.cpp
     DEPENDENCIES
         Quick
 )

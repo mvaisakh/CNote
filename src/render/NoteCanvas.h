@@ -43,6 +43,7 @@ signals:
 public slots:
     void saveNotes();
     void loadNotes();
+    void exportCurrentPdf(const QString &outputPath);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;

@@ -249,6 +249,20 @@ void NoteCanvas::loadNotes()
     }
 }
 
+#include "pdf/ExportEngine.h"
+
+void NoteCanvas::exportCurrentPdf(const QString &outputPath)
+{
+    if (m_pdfPath.isEmpty() || !m_pdfPath.endsWith(".pdf")) return;
+    
+    // Convert URL-style path to local path if needed
+    QString out = outputPath;
+    if (out.startsWith("file://")) out = QUrl(out).toLocalFile();
+    
+    CN_TRACE("Exporting flattened PDF to: %s", out.toLocal8Bit().constData());
+    ExportEngine::exportPdf(m_pdfPath, out, m_finishedStrokes, 20.0f);
+}
+
 void NoteCanvas::touchEvent(QTouchEvent *event)
 {
     if (event->points().count() == 2) {

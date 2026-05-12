@@ -11,6 +11,7 @@ Rectangle {
     
     property var canvas
     signal backRequested()
+    signal exportRequested()
 
     RowLayout {
         anchors.fill: parent
@@ -50,6 +51,17 @@ Rectangle {
         }
 
         Item { Layout.fillWidth: true }
+
+        Button {
+            text: "Export PDF"
+            onClicked: root.exportRequested()
+            background: Rectangle {
+                color: "#2a2a2a"
+                radius: 8
+                border.color: "#3a3a3a"
+            }
+            palette.buttonText: "white"
+        }
 
         Rectangle {
             width: 30; height: 30; radius: 15

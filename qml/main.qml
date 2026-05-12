@@ -36,6 +36,18 @@ Window {
         }
     }
 
+    FileDialog {
+        id: exportDialog
+        title: "Export Annotated PDF"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF files (*.pdf)"]
+        onAccepted: {
+            if (stackView.depth > 1) {
+                stackView.currentItem.canvas.exportCurrentPdf(selectedFile)
+            }
+        }
+    }
+
     StackView {
         id: stackView
         anchors.fill: parent
@@ -73,6 +85,8 @@ Window {
                     stackView.pop()
                     dashboard.refresh()
                 }
+                
+                onExportRequested: exportDialog.open()
             }
 
             NoteCanvas {
