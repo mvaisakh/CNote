@@ -46,7 +46,7 @@ Rectangle {
                     anchors.centerIn: parent
                     width: 24
                     height: 24
-                    source: "qrc:/CeriumNotes/icons/back.svg"
+                    source: "qrc:/CNote/Core/icons/back.svg"
                     sourceSize: Qt.size(64, 64)
                     smooth: true
                     opacity: backButton.pressed ? 0.5 : 0.9
@@ -95,7 +95,7 @@ Rectangle {
                         anchors.centerIn: parent
                         width: 24
                         height: 24
-                        source: "qrc:/CeriumNotes/icons/" + modelData.icon
+                        source: "qrc:/CNote/Core/icons/" + modelData.icon
                         sourceSize: Qt.size(64, 64)
                         smooth: true
                         opacity: isActive ? 1.0 : 0.7
@@ -152,7 +152,7 @@ Rectangle {
                     anchors.centerIn: parent
                     width: 24
                     height: 24
-                    source: "qrc:/CeriumNotes/icons/export.svg"
+                    source: "qrc:/CNote/Core/icons/export.svg"
                     sourceSize: Qt.size(64, 64)
                     smooth: true
                     opacity: 0.9
