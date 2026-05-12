@@ -41,14 +41,14 @@ jobs:
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-windows-lib.zip -o mupdf.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-windows-lib.zip -o mupdf.zip
         expand-archive mupdf.zip -destinationpath third_party/mupdf
-        move third_party/mupdf/mupdf-1.23.11-windows-lib/* third_party/mupdf/
+        move third_party/mupdf/mupdf-1.24.1-windows-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        version: '6.8.0'
         host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
         target: 'desktop'
         arch: ${{ matrix.os == 'windows-latest' && 'win64_msvc2019_64' || matrix.os == 'macos-latest' && 'clang_64' || 'gcc_64' }}
@@ -109,14 +109,14 @@ jobs:
     - name: Install MuPDF for Android
       run: |
         mkdir -p third_party/mupdf
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-android-lib.zip -o mupdf-android.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-android-lib.zip -o mupdf-android.zip
         unzip mupdf-android.zip -d third_party/mupdf
-        mv third_party/mupdf/mupdf-1.23.11-android-lib/* third_party/mupdf/
+        mv third_party/mupdf/mupdf-1.24.1-android-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        version: '6.8.0'
         target: 'android'
         arch: 'android_arm64_v8a'
 
@@ -156,14 +156,14 @@ jobs:
     - name: Install MuPDF for iOS
       run: |
         mkdir -p third_party/mupdf
-        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/archive/mupdf-1.23.11-ios-lib.zip -o mupdf-ios.zip
+        curl -L -A "Mozilla/5.0" https://mupdf.com/downloads/mupdf-1.24.1-ios-lib.zip -o mupdf-ios.zip
         unzip mupdf-ios.zip -d third_party/mupdf
-        mv third_party/mupdf/mupdf-1.23.11-ios-lib/* third_party/mupdf/
+        mv third_party/mupdf/mupdf-1.24.1-ios-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.7.3'
+        version: '6.8.0'
         target: 'ios'
 
     - name: Configure CMake
