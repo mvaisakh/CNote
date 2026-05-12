@@ -61,6 +61,8 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
     QQuickItem::touchEvent(event);
 }
 
+#include <QSGSimpleTextureNode>
+
 QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode;
@@ -68,10 +70,19 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         root = new QSGNode();
     }
 
+    // Layer 0: PDF Background
+    QSGSimpleTextureNode *pdfNode = nullptr;
+    if (root->childCount() > 0) {
+        pdfNode = static_cast<QSGSimpleTextureNode*>(root->childAtIndex(0));
+    } else {
+        pdfNode = new QSGSimpleTextureNode();
+        root->appendChildNode(pdfNode);
+    }
+
     // Layer 1: Static Ink
     QSGGeometryNode *staticNode = nullptr;
-    if (root->childCount() > 0) {
-        staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(0));
+    if (root->childCount() > 1) {
+        staticNode = static_cast<QSGGeometryNode*>(root->childAtIndex(1));
     } else {
         staticNode = new QSGGeometryNode();
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
@@ -83,8 +94,8 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // Layer 2: Active Ink
     QSGGeometryNode *activeNode = nullptr;
-    if (root->childCount() > 1) {
-        activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(1));
+    if (root->childCount() > 2) {
+        activeNode = static_cast<QSGGeometryNode*>(root->childAtIndex(2));
     } else {
         activeNode = new QSGGeometryNode();
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
@@ -92,6 +103,17 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         activeNode->setMaterial(mat);
         activeNode->material()->setFlag(QSGMaterial::Blending, true);
         root->appendChildNode(activeNode);
+    }
+
+    if (m_pdfDirty && !m_pdfPath.isEmpty()) {
+        QImage img = m_pdfEngine.renderTile(0, 0, 0, (int)width(), (int)height(), 1.0f);
+        if (!img.isNull()) {
+            QSGTexture *texture = window()->createTextureFromImage(img);
+            pdfNode->setOwnsTexture(true);
+            pdfNode->setTexture(texture);
+            pdfNode->setRect(0, 0, width(), height());
+        }
+        m_pdfDirty = false;
     }
 
     if (m_activeStrokeDirty) {
@@ -114,16 +136,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
 
     if (m_strokesDirty) {
-        // Simple implementation: combine all finished strokes into one geometry
-        size_t totalPoints = 0;
-        for (const auto& s : m_finishedStrokes) {
-            if (s.points.size() > 1) totalPoints += s.points.size();
-        }
-
-        if (totalPoints > 0) {
-            // Using DrawLines would require 2 points per segment, but let's use a trick or just multiple nodes.
-            // For now, let's just render the last finished stroke to keep it simple.
-            // In a real app, we'd use a persistent texture (Layer 2 requirement).
+        if (!m_finishedStrokes.empty()) {
             const auto& lastStroke = m_finishedStrokes.back();
             QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), lastStroke.points.size());
             geometry->setDrawingMode(QSGGeometry::DrawLineStrip);
