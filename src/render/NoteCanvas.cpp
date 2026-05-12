@@ -3,11 +3,13 @@
 #include <QSGFlatColorMaterial>
 #include <QQuickWindow>
 #include <QMouseEvent>
+#include <QMatrix4x4>
+#include <QSGTransformNode>
 
-NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0), m_penColor(Qt::white), m_currentTool(Pen)
+NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0), m_penColor(Qt::white), m_currentTool(Pen), m_zoomLevel(1.0)
 {
     setFlag(ItemHasContents, true);
-    setAcceptedMouseButtons(Qt::LeftButton);
+    setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton);
     setAcceptTouchEvents(true);
 }
 
@@ -22,6 +24,24 @@ void NoteCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeom
 #include <QFileInfo>
 #include <QDebug>
 #include "Trace.h"
+
+void NoteCanvas::setPenColor(const QColor &color) 
+{ 
+    if (m_penColor != color) { 
+        m_penColor = color; 
+        emit penColorChanged(); 
+    } 
+}
+
+QPointF NoteCanvas::mapToCanvas(const QPointF &screenPos) const
+{
+    return (screenPos - m_panOffset) / m_zoomLevel;
+}
+
+QPointF NoteCanvas::mapFromCanvas(const QPointF &canvasPos) const
+{
+    return canvasPos * m_zoomLevel + m_panOffset;
+}
 
 void NoteCanvas::setPdfPath(const QString& path)
 {
@@ -50,6 +70,9 @@ void NoteCanvas::mouseReleaseEvent(QMouseEvent *) {}
 bool NoteCanvas::event(QEvent *event)
 {
     if (event->type() == QEvent::TabletPress || event->type() == QEvent::MouseButtonPress) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            m_lastMousePos = static_cast<QMouseEvent*>(event)->position();
+        }
         m_activePoints.clear();
         m_activeStrokeDirty = true;
         update();
@@ -63,9 +86,22 @@ bool NoteCanvas::event(QEvent *event)
             pressure = te->pressure();
         } else {
             QMouseEvent *me = static_cast<QMouseEvent*>(event);
-            if (!(me->buttons() & Qt::LeftButton)) return QQuickItem::event(event);
+            if (!(me->buttons() & (Qt::LeftButton | Qt::MiddleButton))) return QQuickItem::event(event);
+            
+            // Middle Mouse Panning
+            if (me->buttons() & Qt::MiddleButton) {
+                QPointF delta = me->position() - m_lastMousePos;
+                m_panOffset += delta;
+                m_lastMousePos = me->position();
+                m_transformDirty = true;
+                update();
+                return true;
+            }
+            m_lastMousePos = me->position();
             pos = me->position();
         }
+        
+        QPointF canvasPos = mapToCanvas(pos);
         
         if (m_currentTool == Eraser) {
             bool changed = false;
@@ -73,9 +109,9 @@ bool NoteCanvas::event(QEvent *event)
             while (it != m_finishedStrokes.end()) {
                 bool hit = false;
                 for (const auto& p : it->points) {
-                    float dx = p.x - pos.x();
-                    float dy = p.y - pos.y();
-                    if (dx*dx + dy*dy < 20*20) { // 20px eraser radius
+                    float dx = p.x - canvasPos.x();
+                    float dy = p.y - canvasPos.y();
+                    if (dx*dx + dy*dy < (20/m_zoomLevel)*(20/m_zoomLevel)) { 
                         hit = true;
                         break;
                     }
@@ -92,13 +128,30 @@ bool NoteCanvas::event(QEvent *event)
                 update();
             }
         } else {
-            InkPoint p = { (float)pos.x(), (float)pos.y(), pressure, 0.0f, 0 };
+            InkPoint p = { (float)canvasPos.x(), (float)canvasPos.y(), pressure, 0.0f, 0 };
             m_activePoints.push_back(p);
             m_activeStrokeDirty = true;
             update();
         }
         return true;
-    } else if (event->type() == QEvent::TabletRelease || event->type() == QEvent::MouseButtonRelease) {
+    } else if (event->type() == QEvent::Wheel) {
+        QWheelEvent *we = static_cast<QWheelEvent*>(event);
+        float delta = we->angleDelta().y() / 120.0f;
+        float factor = 1.1f;
+        if (delta < 0) factor = 1.0f / factor;
+        
+        // Zoom relative to mouse position
+        QPointF mousePos = we->position();
+        QPointF before = mapToCanvas(mousePos);
+        m_zoomLevel *= factor;
+        QPointF after = mapToCanvas(mousePos);
+        m_panOffset += (after - before) * m_zoomLevel;
+        
+        m_transformDirty = true;
+        update();
+        return true;
+    }
+ else if (event->type() == QEvent::TabletRelease || event->type() == QEvent::MouseButtonRelease) {
         if (m_currentTool != Eraser && !m_activePoints.empty()) {
             Stroke s;
             s.points = m_activePoints;
@@ -122,6 +175,31 @@ bool NoteCanvas::event(QEvent *event)
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
 {
+    if (event->points().count() == 2) {
+        const QEventPoint &p1 = event->points().first();
+        const QEventPoint &p2 = event->points().last();
+        
+        QPointF pos1 = p1.position();
+        QPointF pos2 = p2.position();
+        float dist = QLineF(pos1, pos2).length();
+        
+        if (event->touchPointStates() & Qt::TouchPointPressed) {
+            m_lastTouchDist = dist;
+        } else if (event->touchPointStates() & Qt::TouchPointMoved && m_lastTouchDist > 0) {
+            float factor = dist / m_lastTouchDist;
+            QPointF center = (pos1 + pos2) / 2.0;
+            
+            QPointF before = mapToCanvas(center);
+            m_zoomLevel *= factor;
+            QPointF after = mapToCanvas(center);
+            m_panOffset += (after - before) * m_zoomLevel;
+            
+            m_lastTouchDist = dist;
+            m_transformDirty = true;
+            update();
+        }
+        event->accept();
+    }
     QQuickItem::touchEvent(event);
 }
 
@@ -129,26 +207,20 @@ void NoteCanvas::touchEvent(QTouchEvent *event)
 
 QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    QSGNode *root = oldNode;
-    
-    // Safety: If the root exists but doesn't have our 3-layer structure, flush it.
-    if (root && root->childCount() != 3) {
-        CN_TRACE("Invalid layer structure detected, flushing...");
-        while (root->childCount() > 0) {
-            QSGNode *n = root->childAtIndex(0);
-            root->removeChildNode(n);
-            delete n;
-        }
-        delete root;
-        root = nullptr;
-    }
-
+    QSGTransformNode *root = static_cast<QSGTransformNode *>(oldNode);
     if (!root) {
-        CN_TRACE("Initializing Layer Stack (PDF, Static, Active)");
-        root = new QSGNode();
+        root = new QSGTransformNode();
         root->appendChildNode(new QSGNode()); // Index 0: PDF Layer
         root->appendChildNode(new QSGNode()); // Index 1: Static Ink Layer
         root->appendChildNode(new QSGNode()); // Index 2: Active Ink Layer
+    }
+
+    if (m_transformDirty) {
+        QMatrix4x4 m;
+        m.translate(m_panOffset.x(), m_panOffset.y());
+        m.scale(m_zoomLevel);
+        root->setMatrix(m);
+        m_transformDirty = false;
     }
 
     if (!window()) return root;

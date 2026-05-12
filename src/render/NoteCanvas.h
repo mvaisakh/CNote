@@ -26,7 +26,10 @@ public:
     void setPdfPath(const QString& path);
 
     QColor penColor() const { return m_penColor; }
-    void setPenColor(const QColor& color) { if (m_penColor != color) { m_penColor = color; emit penColorChanged(); } }
+    void setPenColor(const QColor &color);
+
+    QPointF mapToCanvas(const QPointF &screenPos) const;
+    QPointF mapFromCanvas(const QPointF &canvasPos) const;
 
     int currentTool() const { return m_currentTool; }
     void setCurrentTool(int tool) { if (m_currentTool != tool) { m_currentTool = tool; emit currentToolChanged(); } }
@@ -57,6 +60,15 @@ private:
     bool m_activeStrokeDirty = false;
     QSize m_renderSize;
     QColor m_penColor = Qt::white;
+    
+    // Spatial State
+    QPointF m_panOffset = QPointF(0, 0);
+    float m_zoomLevel = 1.0f;
+    bool m_transformDirty = true;
+    QPointF m_lastMousePos;
+    float m_lastTouchDist = 0;
+
+    // Internal State
     int m_currentTool = Pen;
 
     void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points);
