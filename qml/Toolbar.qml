@@ -31,10 +31,11 @@ Rectangle {
             }
             contentItem: Image {
                 source: "qrc:/CeriumNotes/icons/back.svg"
-                sourceSize: Qt.size(24, 24)
+                sourceSize: Qt.size(64, 64)
                 fillMode: Image.Pad
                 horizontalAlignment: Image.AlignHCenter
                 verticalAlignment: Image.AlignVCenter
+                smooth: true
             }
         }
 
@@ -70,9 +71,10 @@ Rectangle {
                     
                     contentItem: Image {
                         source: "qrc:/CeriumNotes/icons/" + modelData.icon
-                        sourceSize: Qt.size(24, 24)
+                        sourceSize: Qt.size(64, 64)
                         fillMode: Image.PreserveAspectFit
                         opacity: isActive ? 1.0 : 0.7
+                        smooth: true
                     }
                 }
             }
@@ -85,13 +87,20 @@ Rectangle {
             background: Rectangle {
                 implicitWidth: 44
                 implicitHeight: 44
-                color: hovered ? "#333" : "transparent"
+                color: "transparent"
                 radius: 22
+                Rectangle {
+                    anchors.fill: parent
+                    color: "white"
+                    opacity: parent.parent.hovered ? 0.1 : 0
+                    radius: 22
+                }
             }
             contentItem: Image {
                 source: "qrc:/CeriumNotes/icons/export.svg"
-                sourceSize: Qt.size(24, 24)
+                sourceSize: Qt.size(64, 64)
                 fillMode: Image.PreserveAspectFit
+                smooth: true
             }
         }
 
