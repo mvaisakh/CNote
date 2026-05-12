@@ -62,6 +62,7 @@ jobs:
             qt6-qtbase-devel \
             qt6-qtdeclarative-devel \
             qt6-qtsvg-devel \
+            qt6-qt5compat-devel \
             mupdf-devel
 
       - name: Cache MuPDF (macOS)
