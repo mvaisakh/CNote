@@ -16,9 +16,19 @@ Rectangle {
     signal backRequested()
     signal exportRequested()
 
-    // Glass Blur Effect
+    // Live Background Capturer
+    ShaderEffectSource {
+        id: backgroundCapturer
+        sourceItem: canvas
+        sourceRect: Qt.rect(root.x, root.y, root.width, root.height)
+        anchors.fill: root
+        visible: false // Hidden, used as source for MultiEffect
+        live: true
+    }
+
+    // Gaussian Blur Effect
     MultiEffect {
-        source: root
+        source: backgroundCapturer
         anchors.fill: root
         blurEnabled: true
         blur: 1.0
