@@ -16,6 +16,7 @@ pkg_check_modules(MUPDF REQUIRED mupdf)
 qt_add_executable(CNotes
     src/main.cpp
     src/pdf/PdfEngine.cpp
+    src/ink/InkProcessor.cpp
 )
 
 qt_add_qml_module(CNotes
