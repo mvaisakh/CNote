@@ -2,15 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import Qt5Compat.GraphicalEffects
 import CNote.Core
 
-Rectangle {
+Item {
     id: root
     height: 64
-    color: "#441C1B1F" // More transparent for glass effect
-    radius: 32
-    border.color: "#33FFFFFF"
-    border.width: 1
+    property int radius: 32
     
     property var canvas
     signal backRequested()
@@ -31,26 +29,32 @@ Rectangle {
         recursive: true
     }
 
-    // Gaussian Blur Effect
-    MultiEffect {
-        source: backgroundCapturer
-        anchors.fill: root
-        blurEnabled: true
-        blur: 1.0
-        blurMax: 64
-        contrast: 0.1
-        brightness: 0.1
-        z: -1
-    }
-
-    // Inner rim light for glass effect
+    // Glass Background
     Rectangle {
         anchors.fill: parent
-        anchors.margins: 1
-        radius: 31
-        color: "transparent"
-        border.color: "#22FFFFFF"
+        radius: root.radius
+        color: "#441C1B1F"
+        border.color: "#33FFFFFF"
         border.width: 1
+        clip: true
+
+        FastBlur {
+            anchors.fill: parent
+            source: backgroundCapturer
+            radius: 64
+            transparentBorder: true
+            z: -1
+        }
+
+        // Inner rim light
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: root.radius - 1
+            color: "transparent"
+            border.color: "#22FFFFFF"
+            border.width: 1
+        }
     }
 
     RowLayout {
