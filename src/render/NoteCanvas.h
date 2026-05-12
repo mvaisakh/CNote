@@ -4,6 +4,7 @@
 #include <QSGNode>
 #include <QSGGeometryNode>
 #include <QSGFlatColorMaterial>
+#include <QMutex>
 #include "ink/Stroke.h"
 #include "pdf/PdfEngine.h"
 
@@ -80,4 +81,6 @@ private:
 
     void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points, float baseWidth);
     QSGGeometryNode* createStrokeNode(const Stroke& s);
+
+    mutable QMutex m_mutex;
 };
