@@ -255,7 +255,7 @@ jobs:
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-33 \
             -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
-            -DQT_HOST_PATH=$QT_HOST_PATH_DIR \
+            -DQT_HOST_PATH=$GITHUB_WORKSPACE/Qt/6.8.0/linux_gcc_64 \
             -DQT_ANDROID_BUILD_ALL_ABIS=OFF
 
       - name: Build APK
@@ -321,7 +321,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
             -DQt6_DIR=$Qt6_DIR/lib/cmake/Qt6 \
-            -DQT_HOST_PATH=$QT_HOST_PATH_DIR
+            -DQT_HOST_PATH=$GITHUB_WORKSPACE/Qt/6.8.0/macos
 
       - name: Build
         run: cmake --build build-ios --config Release
