@@ -115,25 +115,20 @@ jobs:
 
       - name: Build MuPDF (Windows)
         if: matrix.os == 'windows-latest' && steps.cache-mupdf.outputs.cache-hit != 'true'
+        shell: pwsh
         run: |
           curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
           python -c "import tarfile; tar = tarfile.open('mupdf.tar.gz'); tar.extractall(); tar.close()"
           cd mupdf-1.27.2-source
-          if [ "${{ matrix.target_arch }}" == "arm64" ]; then
-            MS_PLATFORM="ARM64"
-            PREPROCESSOR="FZ_ENABLE_HYPHENATION=0"
-            LIB_DIR="ARM64"
-          else
-            MS_PLATFORM="x64"
-            PREPROCESSOR=""
-            LIB_DIR="x64"
-          fi
+          $MS_PLATFORM = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
+          $PREPROCESSOR = if ("${{ matrix.target_arch }}" -eq "arm64") { "FZ_ENABLE_HYPHENATION=0" } else { "" }
           msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:PreprocessorDefinitions="$PREPROCESSOR"
           cd ..
-          mkdir -p third_party/mupdf/include
-          mkdir -p third_party/mupdf/lib
-          cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-          cp mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib third_party/mupdf/lib/mupdf.lib
+          New-Item -ItemType Directory -Force -Path third_party/mupdf/include
+          New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
+          Copy-Item -Path mupdf-1.27.2-source/include/* -Destination third_party/mupdf/include/ -Recurse
+          $LIB_DIR = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
+          Copy-Item -Path mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
