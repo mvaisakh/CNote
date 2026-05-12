@@ -5,6 +5,8 @@
 #include <QMouseEvent>
 #include <QMatrix4x4>
 #include <QSGTransformNode>
+#include "core/Trace.h"
+#include "core/PersistenceManager.h"
 
 NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0), m_penColor(Qt::white), m_currentTool(Pen), m_zoomLevel(1.0)
 {
@@ -15,10 +17,45 @@ NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0,
 
 NoteCanvas::~NoteCanvas() {}
 
+QSGGeometryNode* NoteCanvas::createStrokeNode(const Stroke& s)
+{
+    QSGGeometryNode *node = new QSGGeometryNode();
+    node->setFlag(QSGNode::OwnsGeometry);
+    node->setFlag(QSGNode::OwnsMaterial);
+
+    QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), s.points.size());
+    geo->setDrawingMode(QSGGeometry::DrawLineStrip);
+    geo->setLineWidth(s.width);
+    
+    QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
+    for (size_t i = 0; i < s.points.size(); ++i) {
+        v[i].set(s.points[i].x, s.points[i].y);
+    }
+    node->setGeometry(geo);
+
+    QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
+    mat->setColor(s.color);
+    mat->setFlag(QSGMaterial::Blending, true);
+    node->setMaterial(mat);
+
+    return node;
+}
+
 void NoteCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     m_renderSize = newGeometry.size().toSize();
     QQuickItem::geometryChange(newGeometry, oldGeometry);
+}
+
+void NoteCanvas::updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points)
+{
+    if (geometry->vertexCount() != (int)points.size())
+        geometry->allocate(points.size());
+
+    QSGGeometry::Point2D *v = geometry->vertexDataAsPoint2D();
+    for (size_t i = 0; i < points.size(); ++i) {
+        v[i].set(points[i].x, points[i].y);
+    }
 }
 
 #include <QFileInfo>
@@ -58,6 +95,7 @@ void NoteCanvas::setPdfPath(const QString& path)
     
     m_pdfDirty = true;
     emit pdfPathChanged();
+    loadNotes();
     update();
 }
 
@@ -164,6 +202,7 @@ bool NoteCanvas::event(QEvent *event)
             }
             m_finishedStrokes.push_back(s);
             m_strokesDirty = true;
+            saveNotes();
         }
         m_activePoints.clear();
         m_activeStrokeDirty = true;
@@ -171,6 +210,36 @@ bool NoteCanvas::event(QEvent *event)
         return true;
     }
     return QQuickItem::event(event);
+}
+
+void NoteCanvas::saveNotes()
+{
+    if (m_pdfPath.isEmpty()) return;
+    CanvasState state = { m_zoomLevel, m_panOffset, m_finishedStrokes };
+    PersistenceManager::save(m_pdfPath + ".cerium", state);
+}
+
+void NoteCanvas::loadNotes()
+{
+    if (m_pdfPath.isEmpty()) return;
+    CanvasState state;
+    if (PersistenceManager::load(m_pdfPath + ".cerium", state)) {
+        m_zoomLevel = state.zoomLevel;
+        m_panOffset = state.panOffset;
+        m_finishedStrokes = state.strokes;
+        m_strokesDirty = true;
+        m_fullReload = true;
+        m_transformDirty = true;
+        emit notesLoaded();
+    } else {
+        // Reset state for new files
+        m_zoomLevel = 1.0f;
+        m_panOffset = QPointF(0, 0);
+        m_finishedStrokes.clear();
+        m_strokesDirty = true;
+        m_fullReload = true;
+        m_transformDirty = true;
+    }
 }
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
@@ -308,30 +377,20 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // 3. Update Static Ink (Persistent strokes)
     if (m_strokesDirty) {
-        if (!m_finishedStrokes.empty()) {
-            const auto& s = m_finishedStrokes.back();
-            CN_TRACE("Committing stroke: color=%s, width=%.1f", s.color.name().toLocal8Bit().constData(), s.width);
-            
-            QSGGeometryNode *node = new QSGGeometryNode();
-            node->setFlag(QSGNode::OwnsGeometry);
-            node->setFlag(QSGNode::OwnsMaterial);
-
-            QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), s.points.size());
-            geo->setDrawingMode(QSGGeometry::DrawLineStrip);
-            geo->setLineWidth(s.width);
-            
-            QSGGeometry::Point2D *v = geo->vertexDataAsPoint2D();
-            for (size_t i = 0; i < s.points.size(); ++i) {
-                v[i].set(s.points[i].x, s.points[i].y);
+        if (m_fullReload) {
+            while (staticLayer->childCount() > 0) {
+                QSGNode *n = staticLayer->childAtIndex(0);
+                staticLayer->removeChildNode(n);
+                delete n;
             }
-            node->setGeometry(geo);
-
-            QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
-            mat->setColor(s.color);
-            mat->setFlag(QSGMaterial::Blending, true);
-            node->setMaterial(mat);
-
-            staticLayer->appendChildNode(node);
+            for (const auto &s : m_finishedStrokes) {
+                QSGGeometryNode *node = createStrokeNode(s);
+                staticLayer->appendChildNode(node);
+            }
+            m_fullReload = false;
+        } else if (!m_finishedStrokes.empty()) {
+            const auto& s = m_finishedStrokes.back();
+            staticLayer->appendChildNode(createStrokeNode(s));
         }
         m_strokesDirty = false;
     }

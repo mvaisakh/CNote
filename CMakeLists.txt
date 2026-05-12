@@ -33,6 +33,8 @@ qt_add_qml_module(CNotes
         src/render/NoteCanvas.cpp
         src/core/FileManager.h
         src/core/FileManager.cpp
+        src/core/PersistenceManager.h
+        src/core/PersistenceManager.cpp
     DEPENDENCIES
         Quick
 )

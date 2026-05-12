@@ -38,6 +38,11 @@ signals:
     void pdfPathChanged();
     void penColorChanged();
     void currentToolChanged();
+    void notesLoaded();
+
+public slots:
+    void saveNotes();
+    void loadNotes();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
@@ -67,9 +72,11 @@ private:
     bool m_transformDirty = true;
     QPointF m_lastMousePos;
     float m_lastTouchDist = 0;
+    bool m_fullReload = false;
 
     // Internal State
     int m_currentTool = Pen;
 
     void updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points);
+    QSGGeometryNode* createStrokeNode(const Stroke& s);
 };
