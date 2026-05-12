@@ -41,8 +41,9 @@ jobs:
     - name: Install Dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        git -C $VCPKG_INSTALLATION_ROOT pull
-        vcpkg install mupdf:x64-windows
+        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-windows-lib.zip -o mupdf.zip
+        expand-archive mupdf.zip -destinationpath third_party/mupdf
+        mv third_party/mupdf/mupdf-1.23.11-windows-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -54,9 +55,7 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=${{ matrix.os == 'windows-latest' && '$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake' || '' }}
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build build
@@ -103,9 +102,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libmupdf-dev
 
-    - name: Install MuPDF via vcpkg
+    - name: Install MuPDF for Android
       run: |
-        vcpkg install mupdf:arm64-android
+        mkdir -p third_party/mupdf
+        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-android-lib.zip -o mupdf-android.zip
+        unzip mupdf-android.zip -d third_party/mupdf
+        mv third_party/mupdf/mupdf-1.23.11-android-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -126,9 +128,7 @@ jobs:
       run: |
         cmake -B build-android -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
-          -DVCPKG_TARGET_TRIPLET=arm64-android \
-          -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+          -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=arm64-v8a \
           -DANDROID_PLATFORM=android-34
 
@@ -149,9 +149,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install MuPDF via vcpkg
+    - name: Install MuPDF for iOS
       run: |
-        vcpkg install mupdf:arm64-ios
+        mkdir -p third_party/mupdf
+        curl -L https://mupdf.com/downloads/archive/mupdf-1.23.11-ios-lib.zip -o mupdf-ios.zip
+        unzip mupdf-ios.zip -d third_party/mupdf
+        mv third_party/mupdf/mupdf-1.23.11-ios-lib/* third_party/mupdf/
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
@@ -162,8 +165,6 @@ jobs:
     - name: Configure CMake
       run: |
         cmake -B build-ios -G Xcode \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
-          -DVCPKG_TARGET_TRIPLET=arm64-ios \
           -DCMAKE_SYSTEM_NAME=iOS \
           -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
 
