@@ -1,7 +1,12 @@
 build/
+build-android/
 .cache/
 *.user
 .vscode/
 .idea/
 *.swp
 *.log
+scratch/
+android/Android.bp
+.DS_Store
+*.apk
