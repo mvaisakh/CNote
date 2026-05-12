@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
-    height: 60
+    height: 64
     color: "#2a2a2a"
     radius: 12
     opacity: 0.95
@@ -14,19 +14,25 @@ Rectangle {
     signal exportRequested()
 
     RowLayout {
-        anchors.fill: parent
-        anchors.margins: 10
-        spacing: 15
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 16
 
         Button {
             onClicked: root.backRequested()
             background: Rectangle {
+                implicitWidth: 44
+                implicitHeight: 44
                 color: "transparent"
-                radius: 15
+                radius: 22
                 Rectangle {
                     anchors.fill: parent
                     color: "white"
                     opacity: parent.parent.hovered ? 0.1 : 0
+                    radius: 22
                 }
             }
             contentItem: Item {
@@ -44,49 +50,44 @@ Rectangle {
             }
         }
 
-        Row {
-            spacing: 15
-            Layout.alignment: Qt.AlignHCenter
+        Repeater {
+            model: [
+                { name: "Pen", icon: "pen.svg", tool: 0 },
+                { name: "Highlighter", icon: "highlighter.svg", tool: 1 },
+                { name: "Eraser", icon: "eraser.svg", tool: 2 }
+            ]
 
-            Repeater {
-                model: [
-                    { name: "Pen", icon: "pen.svg", tool: 0 },
-                    { name: "Highlighter", icon: "highlighter.svg", tool: 1 },
-                    { name: "Eraser", icon: "eraser.svg", tool: 2 }
-                ]
-
-                delegate: Button {
-                    property bool isActive: canvas ? canvas.currentTool === modelData.tool : false
-                    onClicked: if (canvas) canvas.currentTool = modelData.tool
+            delegate: Button {
+                property bool isActive: canvas ? canvas.currentTool === modelData.tool : false
+                onClicked: if (canvas) canvas.currentTool = modelData.tool
+                
+                background: Rectangle {
+                    implicitWidth: 44
+                    implicitHeight: 44
+                    radius: 22
+                    color: isActive ? "#00adb5" : "transparent"
+                    opacity: isActive ? 1.0 : (hovered ? 0.1 : 0)
                     
-                    background: Rectangle {
-                        implicitWidth: 44
-                        implicitHeight: 44
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "white"
                         radius: 22
-                        color: isActive ? "#00adb5" : "transparent"
-                        opacity: isActive ? 1.0 : (hovered ? 0.1 : 0)
-                        
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "white"
-                            radius: 22
-                            visible: !isActive && parent.parent.hovered
-                        }
+                        visible: !isActive && parent.parent.hovered
                     }
-                    
-                    contentItem: Item {
-                        implicitWidth: 44
-                        implicitHeight: 44
-                        Image {
-                            anchors.centerIn: parent
-                            width: 28
-                            height: 28
-                            source: "qrc:/CeriumNotes/icons/" + modelData.icon
-                            sourceSize: Qt.size(64, 64)
-                            fillMode: Image.PreserveAspectFit
-                            opacity: isActive ? 1.0 : 0.7
-                            smooth: true
-                        }
+                }
+                
+                contentItem: Item {
+                    implicitWidth: 44
+                    implicitHeight: 44
+                    Image {
+                        anchors.centerIn: parent
+                        width: 28
+                        height: 28
+                        source: "qrc:/CeriumNotes/icons/" + modelData.icon
+                        sourceSize: Qt.size(64, 64)
+                        fillMode: Image.PreserveAspectFit
+                        opacity: isActive ? 1.0 : 0.7
+                        smooth: true
                     }
                 }
             }
