@@ -143,7 +143,7 @@ jobs:
         if: matrix.platform == 'linux' && matrix.target_arch == 'arm64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-quick-dev qt6-qml-dev
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev libqt6svg6-dev
 
       - name: Configure CMake
         run: |
