@@ -142,10 +142,6 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGSimpleTextureNode *pdfNode = nullptr;
     if (root->childCount() > 0) {
         pdfNode = static_cast<QSGSimpleTextureNode*>(root->childAtIndex(0));
-    } else {
-        CN_TRACE("Creating PDF node");
-        pdfNode = new QSGSimpleTextureNode();
-        root->appendChildNode(pdfNode);
     }
 
     // Layer 1: Static Ink
@@ -163,6 +159,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::white);
+        mat->setFlag(QSGMaterial::Blending, true);
         staticNode->setMaterial(mat);
         root->appendChildNode(staticNode);
     }
@@ -182,6 +179,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
         QSGFlatColorMaterial *mat = new QSGFlatColorMaterial();
         mat->setColor(Qt::red);
+        mat->setFlag(QSGMaterial::Blending, true);
         activeNode->setMaterial(mat);
         root->appendChildNode(activeNode);
     }
@@ -193,6 +191,10 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             CN_TRACE("Uploading texture %dx%d...", img.width(), img.height());
             QSGTexture *texture = window()->createTextureFromImage(img);
             if (texture) {
+                if (!pdfNode) {
+                    pdfNode = new QSGSimpleTextureNode();
+                    root->prependChildNode(pdfNode);
+                }
                 pdfNode->setOwnsTexture(true);
                 pdfNode->setTexture(texture);
                 pdfNode->setRect(0, 0, width(), height());
