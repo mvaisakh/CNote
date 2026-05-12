@@ -260,7 +260,7 @@ void NoteCanvas::exportCurrentPdf(const QString &outputPath)
     if (out.startsWith("file://")) out = QUrl(out).toLocalFile();
     
     CN_TRACE("Exporting flattened PDF to: %s", out.toLocal8Bit().constData());
-    ExportEngine::exportPdf(m_pdfPath, out, m_finishedStrokes, 20.0f);
+    ExportEngine::exportPdf(m_pdfPath, out, m_finishedStrokes, 20.0f, m_renderSize);
 }
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
