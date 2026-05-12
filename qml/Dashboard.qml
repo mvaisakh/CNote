@@ -166,8 +166,10 @@ Rectangle {
                         source: card
                         anchors.fill: card
                         blurEnabled: true
-                        blur: 0.8
-                        blurMax: 16
+                        blur: 1.0
+                        blurMax: 32
+                        contrast: 0.05
+                        brightness: 0.02
                         z: -1
                     }
 
