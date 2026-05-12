@@ -5,6 +5,8 @@
 #include "core/CrashHandler.h"
 #include "core/FileManager.h"
 
+using namespace Qt::Literals::StringLiterals;
+
 int main(int argc, char *argv[])
 {
     Cerium::setupCrashHandler();
@@ -14,7 +16,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CeriumNotes");
 
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("appVersion", APP_VERSION_STR);
+    engine.rootContext()->setContextProperty("appVersion", QString::fromStdString(APP_VERSION_STR));
     
     QString initialPdf;
     if (argc > 1) {
@@ -24,7 +26,7 @@ int main(int argc, char *argv[])
     initialProperties[QStringLiteral("initialPdf")] = initialPdf;
     engine.setInitialProperties(initialProperties);
 
-    const QUrl url(u"qrc:/CeriumNotes/qml/main.qml"_qs);
+    const QUrl url(u"qrc:/CeriumNotes/qml/main.qml"_s);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)

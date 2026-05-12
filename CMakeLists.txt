@@ -60,6 +60,7 @@ set(APP_VERSION_STR "${BASE_VERSION}-${PLATFORM}-${GIT_HASH}-${HOSTNAME_RES}${GI
 message(STATUS "Building CeriumNotes version: ${APP_VERSION_STR}")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
+qt_standard_project_setup()
 
 # MuPDF Dependency Handling
 set(MUPDF_FOUND FALSE)
@@ -129,6 +130,10 @@ qt_add_qml_module(CNotes
         src/pdf/ExportEngine.cpp
     DEPENDENCIES
         Quick
+)
+
+target_compile_definitions(CNotes PRIVATE 
+    APP_VERSION_STR="${APP_VERSION_STR}"
 )
 
 target_include_directories(CNotes PRIVATE 
