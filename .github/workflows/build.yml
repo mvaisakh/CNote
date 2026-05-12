@@ -232,7 +232,7 @@ jobs:
           version: '6.8.0'
           target: 'desktop'
       - name: Save Host Qt Path
-        run: echo "QT_HOST_PATH_DIR=${QT_PATH}" >> $GITHUB_ENV
+        run: echo "QT_HOST_PATH_DIR=${Qt6_DIR%/lib/cmake/Qt6}" >> $GITHUB_ENV
 
       - name: Install Qt (Android)
         uses: jurplel/install-qt-action@v3
@@ -309,7 +309,7 @@ jobs:
           version: '6.8.0'
           target: 'desktop'
       - name: Save Host Qt Path
-        run: echo "QT_HOST_PATH_DIR=${QT_PATH}" >> $GITHUB_ENV
+        run: echo "QT_HOST_PATH_DIR=${Qt6_DIR%/lib/cmake/Qt6}" >> $GITHUB_ENV
 
       - name: Install Qt (iOS)
         uses: jurplel/install-qt-action@v3
