@@ -121,8 +121,10 @@ jobs:
           python -c "import tarfile; tar = tarfile.open('mupdf.tar.gz'); tar.extractall(); tar.close()"
           cd mupdf-1.27.2-source
           $MS_PLATFORM = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
-          $PREPROCESSOR = if ("${{ matrix.target_arch }}" -eq "arm64") { "FZ_ENABLE_HYPHENATION=0" } else { "" }
-          msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:PreprocessorDefinitions="$PREPROCESSOR"
+          if ("${{ matrix.target_arch }}" -eq "arm64") {
+            $env:CL = "/DFZ_ENABLE_HYPHENATION=0 /DFZ_ENABLE_HYPHEN=0"
+          }
+          msbuild platform/win32/mupdf.sln /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:NoHyphen=1
           cd ..
           New-Item -ItemType Directory -Force -Path third_party/mupdf/include
           New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
