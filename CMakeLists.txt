@@ -120,7 +120,7 @@ endif()
 
 qt_add_executable(CNotes
     MACOSX_BUNDLE
-    WIN32_EXECUTABLE
+    WIN32
     src/main.cpp
     src/pdf/PdfEngine.cpp
     src/ink/InkProcessor.cpp
