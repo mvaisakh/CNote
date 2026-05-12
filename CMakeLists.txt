@@ -141,6 +141,7 @@ target_link_options(CNotes PRIVATE -rdynamic)
 qt_add_qml_module(CNotes
     URI CNote.Core
     VERSION 1.0
+    RESOURCE_PREFIX /
     QML_FILES
         qml/main.qml
         qml/Toolbar.qml
