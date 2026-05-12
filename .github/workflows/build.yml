@@ -8,17 +8,22 @@ on:
 
 jobs:
   build-desktop:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} - ${{ matrix.target_arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        target_arch: [x64]
         include:
-          - os: ubuntu-latest
-            platform: linux
           - os: macos-latest
             platform: macos
+            target_arch: arm64
+          - os: macos-latest
+            platform: macos
+            target_arch: x86_64
+          - os: ubuntu-latest
+            platform: linux
           - os: windows-latest
             platform: windows
 
@@ -33,10 +38,25 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libmupdf-dev libgl1-mesa-dev libxkbcommon-dev
 
-    - name: Install Dependencies (macOS)
-      if: matrix.os == 'macos-latest'
+    - name: Cache MuPDF (macOS)
+      id: cache-mupdf-macos
+      uses: actions/cache@v4
+      with:
+        path: third_party/mupdf
+        key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2
+
+    - name: Build MuPDF (macOS)
+      if: matrix.os == 'macos-latest' && steps.cache-mupdf-macos.outputs.cache-hit != 'true'
       run: |
-        brew install mupdf
+        curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+        tar -xzf mupdf.tar.gz
+        cd mupdf-1.27.2-source
+        make -j$(sysctl -n hw.ncpu) HAVE_X11=no HAVE_GLUT=no OS=macos ARCH=${{ matrix.target_arch }}
+        cd ..
+        mkdir -p third_party/mupdf/include
+        mkdir -p third_party/mupdf/lib
+        cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+        cp mupdf-1.27.2-source/build/release/libmupdf.a third_party/mupdf/lib/
 
     - name: Setup MSBuild
       if: matrix.os == 'windows-latest'
@@ -72,7 +92,9 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
 
     - name: Build
       run: cmake --build build
@@ -99,9 +121,9 @@ jobs:
       run: |
         VERSION=$(cat VERSION.txt | tr -d '\n')
         APP_PATH=$(find build -name "*.app" | head -n 1)
-        mv "$APP_PATH" CeriumNotes-${VERSION}.app
-        zip -r CeriumNotes-${VERSION}-macOS.zip CeriumNotes-${VERSION}.app
-        echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}-macOS.zip" >> $GITHUB_ENV
+        mv "$APP_PATH" CeriumNotes-${VERSION}-${{ matrix.target_arch }}.app
+        zip -r CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip CeriumNotes-${VERSION}-${{ matrix.target_arch }}.app
+        echo "RELEASE_ARTIFACT=CeriumNotes-${VERSION}-${{ matrix.target_arch }}-macOS.zip" >> $GITHUB_ENV
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
