@@ -207,8 +207,6 @@ if(NOT ANDROID AND NOT IOS)
     target_link_libraries(TestInk PRIVATE Qt6::Gui)
     target_include_directories(TestInk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 endif()
-target_link_libraries(TestInk PRIVATE Qt6::Gui)
-target_include_directories(TestInk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Optimization flags placeholder
 # if(CMAKE_BUILD_TYPE STREQUAL "Release")
