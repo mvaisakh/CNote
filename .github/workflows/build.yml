@@ -123,12 +123,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           python -m pip install aqtinstall
+          python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -m qtdeclarative qttools --outputdir ${{ runner.workspace }}/Qt
           if ("${{ matrix.target_arch }}" -eq "arm64") {
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 -m qtdeclarative qttools --outputdir ${{ runner.workspace }}/Qt
             echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
+            echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
             echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
         shell: pwsh
@@ -154,16 +154,19 @@ jobs:
 
 
       - name: Configure CMake
+        shell: bash
         run: |
-          cmake -B build \
-            ${{ matrix.os == 'windows-latest' && '-G "Visual Studio 17 2022"' || '-G Ninja' }} \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
-            ${{ (matrix.os == 'windows-latest' && matrix.target_arch == 'arm64') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/msvc2022_64', runner.workspace) || '' }} \
-            ${{ (matrix.platform == 'ios') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/macos', runner.workspace) || '' }} \
-            ${{ (matrix.platform == 'android') && format('-DQT_HOST_PATH={0}/Qt/6.8.0/gcc_64 -DCMAKE_TOOLCHAIN_FILE={1}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-33', runner.workspace, env.ANDROID_NDK_ROOT) || '' }} \
-            ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
-
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            VS_ARCH=$([ "${{ matrix.target_arch }}" == "arm64" ] && echo "ARM64" || echo "x64")
+            ${{ env.Qt6_DIR }}/bin/qt-cmake.bat -B build -G "Visual Studio 17 2022" -A $VS_ARCH \
+              -DCMAKE_BUILD_TYPE=Release \
+              ${{ matrix.target_arch == 'arm64' && format('-DQT_HOST_PATH={0}', env.QT_HOST_PATH) || '' }}
+          else
+            cmake -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
+              ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
+          fi
       - name: Build
         run: cmake --build build
 
