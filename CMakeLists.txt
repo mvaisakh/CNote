@@ -68,57 +68,50 @@ endif()
 
 option(ENABLE_PDF "Enable PDF support via MuPDF" ON)
 
-# Auto-disable PDF on platforms where dependencies are complex to fetch in CI
-if(ANDROID OR IOS OR WIN32)
-    if(NOT MUPDF_FOUND)
-        set(ENABLE_PDF OFF)
-        message(WARNING "MuPDF not found; PDF support disabled for this platform build.")
-    endif()
-endif()
-
 # MuPDF Dependency Handling
 if(ENABLE_PDF)
     set(MUPDF_FOUND FALSE)
     
-    # 1. Try PkgConfig first (common for Linux system installs)
-    if(NOT ANDROID AND NOT IOS AND NOT WIN32)
+    # 1. ALWAYS check the vendored third_party folder first (Crucial for CI)
+    find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
+        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include
+        NO_DEFAULT_PATH)
+        
+    if(MUPDF_INCLUDE_DIR)
+        set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
+        if(WIN32)
+            file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
+        else()
+            file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.a")
+        endif()
+        
+        if(MUPDF_LIBRARIES)
+            set(MUPDF_FOUND TRUE)
+            message(STATUS "MuPDF found locally in third_party")
+        endif()
+    endif()
+
+    # 2. Fallback to PkgConfig for Linux Desktop (if not found in third_party)
+    if(NOT MUPDF_FOUND AND NOT ANDROID AND NOT IOS AND NOT WIN32)
         find_package(PkgConfig QUIET)
         if(PKG_CONFIG_FOUND)
             pkg_check_modules(MUPDF mupdf IMPORTED_TARGET)
             if(MUPDF_FOUND)
                 message(STATUS "MuPDF found via pkg-config")
                 set(MUPDF_LIBRARIES PkgConfig::MUPDF)
+                set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIRS}) # Handled by pkg-config
             endif()
         endif()
     endif()
 
-    # 2. Fallback to third_party discovery
-    if(NOT MUPDF_FOUND)
-        find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
-            PATHS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include
-            NO_DEFAULT_PATH)
-        
-        if(MUPDF_INCLUDE_DIR)
-            set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
-            if(WIN32)
-                file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
-            else()
-                file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.a")
-            endif()
-            
-            if(MUPDF_LIBRARIES)
-                set(MUPDF_FOUND TRUE)
-                message(STATUS "MuPDF found in third_party")
-            endif()
-        endif()
-    endif()
-
+    # 3. Apply the results
     if(MUPDF_FOUND)
         add_definitions(-DENABLE_PDF)
         message(STATUS "PDF support enabled")
     else()
-        message(WARNING "MuPDF not found; PDF support disabled")
-        set(ENABLE_PDF OFF)
+        message(FATAL_ERROR "MuPDF not found! Cannot compile PDF engine.")
+        # We use FATAL_ERROR because your C++ code explicitly #includes fitz.h. 
+        # If it's missing, the build will fail anyway, so it's better to fail fast in CMake.
     endif()
 endif()
 
