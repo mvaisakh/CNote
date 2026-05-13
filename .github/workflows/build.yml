@@ -390,10 +390,14 @@ jobs:
 
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
 
       - name: Create Release
         run: |
-          gh release create ${{ env.TAG }} CeriumNotes-*/* --generate-notes -p -t "CeriumNotes ${{ env.TAG }} Pre-Release"
+          mkdir -p release-assets
+          find all-artifacts -type f -exec cp {} release-assets/ \;
+          gh release create ${{ env.TAG }} release-assets/* --generate-notes -p -t "CeriumNotes ${{ env.TAG }} Pre-Release" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
