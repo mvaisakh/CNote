@@ -1,3 +1,4 @@
+# CeriumNotes CI Overhaul v3
 name: Cross-Platform Build & Release
 
 on:

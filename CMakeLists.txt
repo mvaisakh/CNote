@@ -75,11 +75,9 @@ if(ENABLE_PDF)
     set(MUPDF_FOUND FALSE)
     
     # 1. ALWAYS check the vendored third_party folder first (Crucial for CI)
-    find_path(MUPDF_INCLUDE_DIR mupdf/fitz.h
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include
-        NO_DEFAULT_PATH)
-        
-    if(MUPDF_INCLUDE_DIR)
+    set(LOCAL_INC "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include")
+    if(EXISTS "${LOCAL_INC}/mupdf/fitz.h")
+        set(MUPDF_INCLUDE_DIR "${LOCAL_INC}")
         set(MUPDF_INCLUDE_DIRS ${MUPDF_INCLUDE_DIR})
         if(WIN32)
             file(GLOB MUPDF_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/lib/*.lib")
@@ -89,9 +87,7 @@ if(ENABLE_PDF)
         
         if(MUPDF_LIBRARIES)
             set(MUPDF_FOUND TRUE)
-            message(STATUS "MuPDF found locally in third_party")
-            message(STATUS "MuPDF Include Dir: ${MUPDF_INCLUDE_DIR}")
-            message(STATUS "MuPDF Libraries: ${MUPDF_LIBRARIES}")
+            message(STATUS "MuPDF found locally in third_party: ${MUPDF_LIBRARIES}")
         endif()
     endif()
 
