@@ -83,7 +83,7 @@ jobs:
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-          cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
+          find mupdf-1.27.2-source/build -name "*.a" -exec cp {} third_party/mupdf/lib/ \;
 
 
       - id: cache-mupdf
@@ -201,9 +201,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libmupdf-dev
+        run: sudo apt-get update -qq
 
       - name: Cache MuPDF (Android)
         id: cache-mupdf-android
@@ -223,7 +221,7 @@ jobs:
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-          cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
+          find mupdf-1.27.2-source/build -name "*.a" -exec cp {} third_party/mupdf/lib/ \;
 
       - name: Install Qt (Android)
         run: |
@@ -305,7 +303,7 @@ jobs:
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
           cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-          cp mupdf-1.27.2-source/build/release/*.a third_party/mupdf/lib/
+          find mupdf-1.27.2-source/build -name "*.a" -exec cp {} third_party/mupdf/lib/ \;
 
       - name: Install Qt (iOS)
         run: |
