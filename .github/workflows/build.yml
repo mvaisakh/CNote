@@ -254,11 +254,24 @@ jobs:
       - name: Build APK
         run: cmake --build build --target apk
 
+      - name: Sign APK (Self-Signed)
+        run: |
+          keytool -genkey -v -keystore temp.jks -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias temp-key -keypass password -storepass password \
+            -dname "CN=CeriumNotes, OU=Cerium, O=Cerium, L=Earth, S=Earth, C=Earth"
+          
+          UNSIGNED_APK=$(find build/android-build/build/outputs/apk/release -name "*.apk" | head -n 1)
+          echo "Signing $UNSIGNED_APK..."
+          
+          apksigner sign --ks temp.jks --ks-pass pass:password --ks-key-alias temp-key --key-pass pass:password \
+            --out build/android-build/build/outputs/apk/release/CeriumNotes-Signed.apk \
+            "$UNSIGNED_APK"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CeriumNotes-android
-          path: build/android-build/build/outputs/apk/release/*.apk
+          path: build/android-build/build/outputs/apk/release/CeriumNotes-Signed.apk
 
   build-ios:
     name: Build (iOS)
