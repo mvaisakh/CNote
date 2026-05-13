@@ -135,7 +135,9 @@ set_target_properties(CNotes PROPERTIES
     OUTPUT_NAME "CeriumNotes"
 )
 
-target_link_options(CNotes PRIVATE -rdynamic)
+if(NOT WIN32)
+    target_link_options(CNotes PRIVATE -rdynamic)
+endif()
 
 qt_add_qml_module(CNotes
     URI CNote.Core
