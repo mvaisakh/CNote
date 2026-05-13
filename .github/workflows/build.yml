@@ -392,10 +392,8 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.TAG }}
-          name: CeriumNotes ${{ env.TAG }} Pre-Release
-          prerelease: true
-          files: |
-            CeriumNotes-*/*
+        run: |
+          gh release create ${{ env.TAG }} CeriumNotes-*/* --generate-notes -p -t "CeriumNotes ${{ env.TAG }} Pre-Release"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
