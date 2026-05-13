@@ -397,7 +397,7 @@ jobs:
         run: |
           mkdir -p release-assets
           find all-artifacts -type f -exec cp {} release-assets/ \;
-          gh release create ${{ env.TAG }} release-assets/* --generate-notes -p -t "CeriumNotes ${{ env.TAG }} Pre-Release" --clobber
+          gh release create ${{ env.TAG }} release-assets/* --generate-notes -p -t "CeriumNotes ${{ env.TAG }} Pre-Release"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
