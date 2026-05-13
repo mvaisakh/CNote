@@ -31,9 +31,6 @@ jobs:
           - os: windows-latest
             platform: windows
             target_arch: x64
-          - os: windows-latest
-            platform: windows
-            target_arch: arm64
 
     container:
       image: ${{ matrix.platform == 'linux' && 'fedora:rawhide' || '' }}
@@ -107,17 +104,12 @@ jobs:
           curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
           python -c "import tarfile; tar = tarfile.open('mupdf.tar.gz'); tar.extractall(); tar.close()"
           cd mupdf-1.27.2-source
-          $MS_PLATFORM = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
-          if ("${{ matrix.target_arch }}" -eq "arm64") {
-            $env:CL = "/DFZ_ENABLE_HYPHENATION=0 /DFZ_ENABLE_HYPHEN=0"
-          }
-          msbuild platform/win32/mupdf.sln /m /p:Configuration=Release /p:Platform=$MS_PLATFORM /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:NoHyphen=1
+          msbuild platform/win32/mupdf.sln /m /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /p:NoHyphen=1
           cd ..
           New-Item -ItemType Directory -Force -Path third_party/mupdf/include
           New-Item -ItemType Directory -Force -Path third_party/mupdf/lib
           Copy-Item -Path mupdf-1.27.2-source/include/* -Destination third_party/mupdf/include/ -Recurse
-          $LIB_DIR = if ("${{ matrix.target_arch }}" -eq "arm64") { "ARM64" } else { "x64" }
-          Copy-Item -Path mupdf-1.27.2-source/platform/win32/$LIB_DIR/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
+          Copy-Item -Path mupdf-1.27.2-source/platform/win32/x64/Release/libmupdf.lib -Destination third_party/mupdf/lib/mupdf.lib
 
       - name: Install Qt (Windows)
         if: matrix.os == 'windows-latest'
@@ -126,13 +118,7 @@ jobs:
           $WORKSPACE = "${{ runner.workspace }}".Replace('\', '/')
           python -m pip install aqtinstall
           python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir $WORKSPACE/Qt
-          if ("${{ matrix.target_arch }}" -eq "arm64") {
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 --outputdir $WORKSPACE/Qt
-            echo "Qt6_DIR=$WORKSPACE/Qt/6.8.0/msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
-            echo "QT_HOST_PATH=$WORKSPACE/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
-          } else {
-            echo "Qt6_DIR=$WORKSPACE/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
-          }
+          echo "Qt6_DIR=$WORKSPACE/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install Qt (macOS/iOS/Android)
         if: matrix.platform != 'linux' && matrix.os != 'windows-latest'
@@ -157,10 +143,8 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            VS_ARCH=$([ "${{ matrix.target_arch }}" == "arm64" ] && echo "ARM64" || echo "x64")
-            "$Qt6_DIR/bin/qt-cmake.bat" -B build -G "Visual Studio 17 2022" -A $VS_ARCH \
-              -DCMAKE_BUILD_TYPE=Release \
-              ${{ matrix.target_arch == 'arm64' && format('-DQT_HOST_PATH="{0}"', env.QT_HOST_PATH) || '' }}
+            "$Qt6_DIR/bin/qt-cmake.bat" -B build -G "Visual Studio 17 2022" -A x64 \
+              -DCMAKE_BUILD_TYPE=Release
           else
             cmake -B build -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
