@@ -123,14 +123,15 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
+          $WORKSPACE = "${{ runner.workspace }}".Replace('\', '/')
           python -m pip install aqtinstall
-          python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir ${{ runner.workspace }}/Qt
+          python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir $WORKSPACE/Qt
           if ("${{ matrix.target_arch }}" -eq "arm64") {
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 --outputdir ${{ runner.workspace }}/Qt
-            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
-            echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 --outputdir $WORKSPACE/Qt
+            echo "Qt6_DIR=$WORKSPACE/Qt/6.8.0/msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
+            echo "QT_HOST_PATH=$WORKSPACE/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
-            echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
+            echo "Qt6_DIR=$WORKSPACE/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
 
       - name: Install Qt (macOS/iOS/Android)
@@ -152,21 +153,21 @@ jobs:
             echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/macos" >> $GITHUB_ENV
           fi
 
-
       - name: Configure CMake
         shell: bash
         run: |
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
             VS_ARCH=$([ "${{ matrix.target_arch }}" == "arm64" ] && echo "ARM64" || echo "x64")
-            ${{ env.Qt6_DIR }}/bin/qt-cmake.bat -B build -G "Visual Studio 17 2022" -A $VS_ARCH \
+            "$Qt6_DIR/bin/qt-cmake.bat" -B build -G "Visual Studio 17 2022" -A $VS_ARCH \
               -DCMAKE_BUILD_TYPE=Release \
-              ${{ matrix.target_arch == 'arm64' && format('-DQT_HOST_PATH={0}', env.QT_HOST_PATH) || '' }}
+              ${{ matrix.target_arch == 'arm64' && format('-DQT_HOST_PATH="{0}"', env.QT_HOST_PATH) || '' }}
           else
             cmake -B build -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
+              -DCMAKE_PREFIX_PATH="$Qt6_DIR" \
               ${{ matrix.os == 'macos-latest' && format('-DCMAKE_OSX_ARCHITECTURES={0}', matrix.target_arch) || '' }}
           fi
+
       - name: Build
         run: cmake --build build
 
