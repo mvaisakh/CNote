@@ -181,6 +181,7 @@ target_include_directories(CNotes PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render
     ${MUPDF_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mupdf/include
 )
 
 target_link_libraries(CNotes PRIVATE
