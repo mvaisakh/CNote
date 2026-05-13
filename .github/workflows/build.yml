@@ -316,11 +316,10 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build -G Xcode \
+          ${{ env.Qt6_DIR }}/bin/qt-cmake -B build -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
-            -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }} \
-            -DQt6_DIR=${{ env.Qt6_DIR }}/lib/cmake/Qt6 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DQT_HOST_PATH=${{ env.QT_HOST_PATH }}
 
       - name: Build
