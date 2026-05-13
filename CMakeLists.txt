@@ -166,6 +166,19 @@ qt_add_qml_module(CNotes
         Quick
 )
 
+if(IOS)
+    set_target_properties(CNotes PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.cerium.notes"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+    )
+endif()
+
 target_compile_definitions(CNotes PRIVATE 
     APP_VERSION_STR="${APP_VERSION_STR}"
 )
