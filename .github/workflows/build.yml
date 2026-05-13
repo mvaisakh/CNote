@@ -121,17 +121,17 @@ jobs:
 
       - name: Install Qt (Windows)
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
           python -m pip install aqtinstall
-          python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 -m qtdeclarative qttools --outputdir ${{ runner.workspace }}/Qt
+          python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_64 --outputdir ${{ runner.workspace }}/Qt
           if ("${{ matrix.target_arch }}" -eq "arm64") {
-            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 -m qtdeclarative qttools --outputdir ${{ runner.workspace }}/Qt
+            python -m aqt install-qt windows desktop 6.8.0 win64_msvc2022_arm64 --outputdir ${{ runner.workspace }}/Qt
             echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_arm64" | Out-File -FilePath $env:GITHUB_ENV -Append
             echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
             echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
-        shell: pwsh
 
       - name: Install Qt (macOS/iOS/Android)
         if: matrix.platform != 'linux' && matrix.os != 'windows-latest'
