@@ -186,10 +186,14 @@ target_link_libraries(CNotes PRIVATE
 
 target_link_libraries(CNotes PRIVATE ${MUPDF_LIBRARIES})
 
-add_executable(TestInk
-    src/ink/test_ink.cpp
-    src/ink/InkProcessor.cpp
-)
+if(NOT ANDROID AND NOT IOS)
+    add_executable(TestInk
+        src/ink/test_ink.cpp
+        src/ink/InkProcessor.cpp
+    )
+    target_link_libraries(TestInk PRIVATE Qt6::Gui)
+    target_include_directories(TestInk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+endif()
 target_link_libraries(TestInk PRIVATE Qt6::Gui)
 target_include_directories(TestInk PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
