@@ -225,7 +225,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: android-mupdf-1.27.2
+          key: android-mupdf-1.27.2-v1
 
       - name: Build MuPDF (Android)
         if: steps.cache-mupdf-android.outputs.cache-hit != 'true'
@@ -291,7 +291,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: ios-mupdf-1.27.2
+          key: ios-mupdf-1.27.2-v1
 
       - name: Build MuPDF (iOS)
         if: steps.cache-mupdf-ios.outputs.cache-hit != 'true'
