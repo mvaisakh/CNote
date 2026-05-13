@@ -153,7 +153,7 @@ jobs:
           fi
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --config Release
 
       - name: Package (Linux)
         if: matrix.platform == 'linux'
@@ -260,7 +260,7 @@ jobs:
             -DQT_ANDROID_BUILD_ALL_ABIS=OFF
 
       - name: Build APK
-        run: cmake --build build --target apk
+        run: cmake --build build --target apk --config Release
 
       - name: Sign APK (Self-Signed)
         run: |
