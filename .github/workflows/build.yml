@@ -221,7 +221,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: android-mupdf-1.27.2-v3
+          key: android-mupdf-1.27.2-v4
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -249,11 +249,13 @@ jobs:
           # Use the NDK toolchain for cross-compilation
           export TOOLCHAIN=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
           export TARGET=aarch64-linux-android33
+          export SYSROOT=$TOOLCHAIN/sysroot
           make -j$(nproc) libs HAVE_X11=no HAVE_GLUT=no OS=android ARCH=arm64 \
-            CC=$TOOLCHAIN/bin/$TARGET-clang \
-            AR=$TOOLCHAIN/bin/llvm-ar \
-            RANLIB=$TOOLCHAIN/bin/llvm-ranlib \
-            XCFLAGS="-fPIC"
+            CC="$TOOLCHAIN/bin/$TARGET-clang" \
+            AR="$TOOLCHAIN/bin/llvm-ar" \
+            RANLIB="$TOOLCHAIN/bin/llvm-ranlib" \
+            XCFLAGS="-target $TARGET --sysroot $SYSROOT -fPIC" \
+            XLDFLAGS="-target $TARGET --sysroot $SYSROOT"
           cd ..
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
