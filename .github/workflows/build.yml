@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2-v2
+          key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2-v3
 
       - name: Build MuPDF (macOS)
         if: matrix.os == 'macos-latest' && steps.cache-mupdf-macos.outputs.cache-hit != 'true'
@@ -92,7 +92,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2-v2
+          key: ${{ runner.os }}-${{ matrix.target_arch }}-mupdf-1.27.2-v3
 
       - name: Setup MSBuild
         if: matrix.os == 'windows-latest'
@@ -213,35 +213,15 @@ jobs:
             tar \
             which \
             java-latest-openjdk-devel \
-            python3-pip
+            python3-pip \
+            make
 
       - name: Cache MuPDF (Android)
         id: cache-mupdf-android
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: android-mupdf-1.27.2-v2
-
-      - name: Build MuPDF (Android)
-        if: steps.cache-mupdf-android.outputs.cache-hit != 'true'
-        run: |
-          curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
-          tar -xzf mupdf.tar.gz
-          cd mupdf-1.27.2-source
-          make -j$(nproc) libs HAVE_X11=no HAVE_GLUT=no OS=android ARCH=arm64
-          cd ..
-          mkdir -p third_party/mupdf/include
-          mkdir -p third_party/mupdf/lib
-          cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
-          find mupdf-1.27.2-source/build -name "*.a" -exec cp {} third_party/mupdf/lib/ \;
-
-      - name: Install Qt (Android)
-        run: |
-          python3 -m pip install aqtinstall --break-system-packages
-          python3 -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
-          python3 -m aqt install-qt linux android 6.8.0 android_arm64_v8a -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
-          echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/android_arm64_v8a" >> $GITHUB_ENV
-          echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64" >> $GITHUB_ENV
+          key: android-mupdf-1.27.2-v3
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -251,6 +231,34 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sdkmanager "ndk;26.1.10909125" "build-tools;34.0.0" "platforms;android-34"
           echo "ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Install Qt (Android)
+        run: |
+          python3 -m pip install aqtinstall --break-system-packages
+          python3 -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
+          python3 -m aqt install-qt linux android 6.8.0 android_arm64_v8a -m qt5compat qtshadertools --outputdir ${{ runner.workspace }}/Qt
+          echo "Qt6_DIR=${{ runner.workspace }}/Qt/6.8.0/android_arm64_v8a" >> $GITHUB_ENV
+          echo "QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64" >> $GITHUB_ENV
+
+      - name: Build MuPDF (Android)
+        if: steps.cache-mupdf-android.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://casper.mupdf.com/downloads/archive/mupdf-1.27.2-source.tar.gz -o mupdf.tar.gz
+          tar -xzf mupdf.tar.gz
+          cd mupdf-1.27.2-source
+          # Use the NDK toolchain for cross-compilation
+          export TOOLCHAIN=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
+          export TARGET=aarch64-linux-android33
+          make -j$(nproc) libs HAVE_X11=no HAVE_GLUT=no OS=android ARCH=arm64 \
+            CC=$TOOLCHAIN/bin/$TARGET-clang \
+            AR=$TOOLCHAIN/bin/llvm-ar \
+            RANLIB=$TOOLCHAIN/bin/llvm-ranlib \
+            XCFLAGS="-fPIC"
+          cd ..
+          mkdir -p third_party/mupdf/include
+          mkdir -p third_party/mupdf/lib
+          cp -r mupdf-1.27.2-source/include/* third_party/mupdf/include/
+          find mupdf-1.27.2-source/build -name "*.a" -exec cp {} third_party/mupdf/lib/ \;
 
       - name: Configure CMake
         run: |
@@ -301,7 +309,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: third_party/mupdf
-          key: ios-mupdf-1.27.2-v2
+          key: ios-mupdf-1.27.2-v3
 
       - name: Build MuPDF (iOS)
         if: steps.cache-mupdf-ios.outputs.cache-hit != 'true'
@@ -310,9 +318,11 @@ jobs:
           tar -xzf mupdf.tar.gz
           cd mupdf-1.27.2-source
           make -j$(sysctl -n hw.ncpu) libs OS=ios ARCH=arm64 \
-            CC="$(xcrun -sdk iphoneos -find clang) -isysroot $(xcrun -sdk iphoneos --show-sdk-path)" \
+            CC="$(xcrun -sdk iphoneos -find clang)" \
             AR="$(xcrun -sdk iphoneos -find ar)" \
-            RANLIB="$(xcrun -sdk iphoneos -find ranlib)"
+            RANLIB="$(xcrun -sdk iphoneos -find ranlib)" \
+            XCFLAGS="-arch arm64 -isysroot $(xcrun -sdk iphoneos --show-sdk-path) -miphoneos-version-min=16.0" \
+            XLDFLAGS="-arch arm64 -isysroot $(xcrun -sdk iphoneos --show-sdk-path)"
           cd ..
           mkdir -p third_party/mupdf/include
           mkdir -p third_party/mupdf/lib
