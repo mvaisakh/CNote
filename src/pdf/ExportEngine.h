@@ -3,7 +3,7 @@
 #include <vector>
 #include <QSizeF>
 #include "ink/Stroke.h"
-#ifndef ANDROID
+#ifdef ENABLE_PDF
 #include <mupdf/fitz.h>
 #endif
 
