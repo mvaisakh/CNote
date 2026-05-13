@@ -50,7 +50,7 @@ bool ExportEngine::exportPdf(const QString &sourcePdf,
 
                 pdf_annot *annot = pdf_create_annot(ctx, page, PDF_ANNOT_INK);
                 
-                int n = s.points.size();
+                int n = static_cast<int>(s.points.size());
                 fz_point *pts = (fz_point*)fz_malloc(ctx, sizeof(fz_point) * n);
                 for (int j = 0; j < n; ++j) {
                     // 1. Map Canvas Space -> PDF Local Space (Scaled)

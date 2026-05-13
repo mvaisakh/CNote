@@ -70,7 +70,7 @@ QSGGeometryNode* NoteCanvas::createStrokeNode(const Stroke& s)
     node->setFlag(QSGNode::OwnsMaterial);
 
     // 2. Solid 2-Vertex Strip
-    int vertexCount = smoothed.size() * 2;
+    int vertexCount = static_cast<int>(smoothed.size() * 2);
     QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
     geo->setDrawingMode(QSGGeometry::DrawTriangleStrip);
     
@@ -121,7 +121,7 @@ void NoteCanvas::geometryChange(const QRectF &newGeometry, const QRectF &oldGeom
 
 void NoteCanvas::updateGeometry(QSGGeometry *geometry, const std::vector<InkPoint>& points, float baseWidth)
 {
-    int vertexCount = points.size() * 2;
+    int vertexCount = static_cast<int>(points.size() * 2);
     if (geometry->vertexCount() != vertexCount)
         geometry->allocate(vertexCount);
 
@@ -537,7 +537,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
                 node->setFlag(QSGNode::OwnsMaterial);
 
                 float activeWidth = m_currentTool == Highlighter ? 15.0f : 3.5f;
-                int vertexCount = m_activePoints.size() * 2;
+                int vertexCount = static_cast<int>(m_activePoints.size() * 2);
                 QSGGeometry *geo = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
                 geo->setDrawingMode(QSGGeometry::DrawTriangleStrip);
             

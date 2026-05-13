@@ -20,7 +20,7 @@ static void handle_signal(int sig) {
     size = backtrace(array, 32);
 
     // Print out all the frames to stderr
-    backtrace_symbols_fd(array, size, 2); // 2 is stderr
+    backtrace_symbols_fd(array, static_cast<int>(size), 2); // 2 is stderr
 #else
     fprintf(stderr, "Backtrace not available on this platform\n");
 #endif
