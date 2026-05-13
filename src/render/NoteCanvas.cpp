@@ -410,7 +410,7 @@ void NoteCanvas::exportCurrentPdf(const QString &outputPath)
 
 void NoteCanvas::touchEvent(QTouchEvent *event)
 {
-    CN_TRACE("Touch Event: %d points", event->points().count());
+    CN_TRACE("Touch Event: %d points", static_cast<int>(event->points().count()));
     
     if (event->points().count() == 1) {
         const QEventPoint &p = event->points().first();
