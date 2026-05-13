@@ -192,6 +192,7 @@ jobs:
   build-android:
     name: Build (Android)
     runs-on: ubuntu-latest
+    container: fedora:rawhide
     defaults:
       run:
         shell: bash
@@ -201,7 +202,16 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        run: sudo apt-get update -qq
+        run: |
+          dnf install -y \
+            cmake \
+            ninja-build \
+            gcc-c++ \
+            git \
+            tar \
+            which \
+            java-latest-openjdk-devel \
+            python3-pip
 
       - name: Cache MuPDF (Android)
         id: cache-mupdf-android
