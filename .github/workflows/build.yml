@@ -212,7 +212,7 @@ jobs:
             git \
             tar \
             which \
-            java-latest-openjdk-devel \
+            java-17-openjdk-devel \
             python3-pip \
             make
 
