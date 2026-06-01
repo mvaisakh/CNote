@@ -9,6 +9,7 @@ struct CanvasState {
     float zoomLevel;
     QPointF panOffset;
     std::vector<Stroke> strokes;
+    int pageCount = 1;
 };
 
 class PersistenceManager

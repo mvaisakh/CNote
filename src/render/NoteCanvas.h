@@ -41,6 +41,8 @@ signals:
     void currentToolChanged();
     void notesLoaded();
 
+    Q_INVOKABLE void addPage();
+
 public slots:
     void saveNotes();
     void loadNotes();
@@ -75,6 +77,7 @@ private:
     QPointF m_lastMousePos;
     float m_lastTouchDist = 0;
     bool m_fullReload = false;
+    int m_pageCount = 1;
 
     // Internal State
     int m_currentTool = Pen;

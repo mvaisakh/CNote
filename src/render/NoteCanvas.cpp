@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include "core/Trace.h"
 #include "core/PersistenceManager.h"
+#include <QSGSimpleRectNode>
 
 NoteCanvas::NoteCanvas(QQuickItem *parent) : QQuickItem(parent), m_renderSize(0, 0), m_penColor(Qt::white), m_currentTool(Pen), m_zoomLevel(1.0)
 {
@@ -177,6 +178,15 @@ QPointF NoteCanvas::mapToCanvas(const QPointF &screenPos) const
 QPointF NoteCanvas::mapFromCanvas(const QPointF &canvasPos) const
 {
     return canvasPos * m_zoomLevel + m_panOffset;
+}
+
+void NoteCanvas::addPage()
+{
+    QMutexLocker locker(&m_mutex);
+    m_pageCount++;
+    m_pdfDirty = true;
+    m_transformDirty = true;
+    update();
 }
 
 void NoteCanvas::setPdfPath(const QString& path)
@@ -364,7 +374,7 @@ void NoteCanvas::saveNotes()
     CanvasState state;
     {
         QMutexLocker locker(&m_mutex);
-        state = { m_zoomLevel, m_panOffset, m_finishedStrokes };
+        state = { m_zoomLevel, m_panOffset, m_finishedStrokes, m_pageCount };
     }
     PersistenceManager::save(m_pdfPath + ".cerium", state);
 }
@@ -378,6 +388,7 @@ void NoteCanvas::loadNotes()
         m_zoomLevel = state.zoomLevel;
         m_panOffset = state.panOffset;
         m_finishedStrokes = state.strokes;
+        m_pageCount = state.pageCount;
         m_strokesDirty = true;
         m_fullReload = true;
         m_transformDirty = true;
@@ -388,6 +399,7 @@ void NoteCanvas::loadNotes()
         m_zoomLevel = 1.0f;
         m_panOffset = QPointF(0, 0);
         m_finishedStrokes.clear();
+        m_pageCount = 1;
         m_strokesDirty = true;
         m_fullReload = true;
         m_transformDirty = true;
@@ -487,9 +499,24 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             delete n;
         }
 
-        int pageCount = m_pdfEngine.pageCount();
-        float currentY = 0;
-        float spacing = 20.0f; // Gap between pages
+        if (m_pdfPath.endsWith(".note")) {
+            float currentY = 0;
+            float spacing = 20.0f;
+            int targetW = 800;
+            int targetH = 1131;
+            int offsetX = (m_renderSize.width() - targetW) / 2;
+
+            for (int i = 0; i < m_pageCount; ++i) {
+                QSGSimpleRectNode *pageNode = new QSGSimpleRectNode();
+                pageNode->setRect(offsetX, currentY, targetW, targetH);
+                pageNode->setColor(Qt::white);
+                pdfLayer->appendChildNode(pageNode);
+                currentY += targetH + spacing;
+            }
+        } else {
+            int pageCount = m_pdfEngine.pageCount();
+            float currentY = 0;
+            float spacing = 20.0f; // Gap between pages
 
         for (int i = 0; i < pageCount; ++i) {
             QSizeF pageSize = m_pdfEngine.pageSize(i);
@@ -517,6 +544,7 @@ QSGNode *NoteCanvas::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
                 }
             }
             currentY += targetH + spacing;
+        }
         }
         m_pdfDirty = false;
     }

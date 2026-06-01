@@ -119,26 +119,6 @@ Window {
                 id: canvas
                 anchors.fill: parent
                 pdfPath: pdfToLoad
-
-                // Subtle Dotted Background
-                Canvas {
-                    anchors.fill: parent
-                    z: -1
-                    opacity: 0.1
-                    onPaint: {
-                        var ctx = getContext("2d");
-                        ctx.clearRect(0, 0, width, height);
-                        ctx.fillStyle = "white";
-                        var spacing = 30;
-                        for (var x = spacing; x < width; x += spacing) {
-                            for (var y = spacing; y < height; y += spacing) {
-                                ctx.beginPath();
-                                ctx.arc(x, y, 1, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        }
-                    }
-                }
             }
 
             Toolbar {

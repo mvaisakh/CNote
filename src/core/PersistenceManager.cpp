@@ -37,10 +37,11 @@ bool PersistenceManager::save(const QString &path, const CanvasState &state)
 
     // Magic number and version
     out << (quint32)0xCE71011 // "CE-RI-UM"
-        << (quint32)1         // File format version
+        << (quint32)2         // File format version
         << state.zoomLevel
         << state.panOffset
-        << (quint32)state.strokes.size();
+        << (quint32)state.strokes.size()
+        << (quint32)state.pageCount;
 
     for (const auto &s : state.strokes) {
         out << s;
@@ -64,6 +65,14 @@ bool PersistenceManager::load(const QString &path, CanvasState &state)
     if (magic != 0xCE71011) return false;
 
     in >> state.zoomLevel >> state.panOffset >> strokeCount;
+    if (version >= 2) {
+        quint32 pgCount;
+        in >> pgCount;
+        state.pageCount = pgCount;
+    } else {
+        state.pageCount = 1;
+    }
+
     state.strokes.resize(strokeCount);
 
     for (quint32 i = 0; i < strokeCount; ++i) {
