@@ -12,19 +12,40 @@ FileManager::FileManager(QObject *parent) : QObject(parent)
 QString FileManager::importPdf(const QUrl &fileUrl)
 {
     QString sourcePath = fileUrl.toLocalFile();
+    if (sourcePath.isEmpty()) {
+        sourcePath = fileUrl.toString();
+    }
+    
     if (sourcePath.isEmpty()) return QString();
 
-    QFileInfo info(sourcePath);
-    if (!info.exists()) return QString();
+    QString fileName = fileUrl.fileName();
+    if (fileName.isEmpty()) {
+        fileName = "imported.pdf";
+    }
+    if (!fileName.endsWith(".pdf", Qt::CaseInsensitive)) {
+        fileName += ".pdf";
+    }
 
     // Create a unique name to avoid collisions
-    QString targetName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_" + info.fileName();
+    QString targetName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_" + fileName;
     QString targetPath = m_basePath + "/" + targetName;
 
     CN_TRACE("Importing PDF: %s -> %s", sourcePath.toLocal8Bit().constData(), targetPath.toLocal8Bit().constData());
 
     if (QFile::copy(sourcePath, targetPath)) {
         return targetPath;
+    }
+
+    // Fallback reading for Android if QFile::copy fails due to URI issues
+    QFile srcFile(sourcePath);
+    if (srcFile.open(QIODevice::ReadOnly)) {
+        QFile destFile(targetPath);
+        if (destFile.open(QIODevice::WriteOnly)) {
+            destFile.write(srcFile.readAll());
+            destFile.close();
+            srcFile.close();
+            return targetPath;
+        }
     }
 
     return QString();
