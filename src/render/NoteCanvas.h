@@ -41,12 +41,11 @@ signals:
     void currentToolChanged();
     void notesLoaded();
 
-    Q_INVOKABLE void addPage();
-
 public slots:
     void saveNotes();
     void loadNotes();
     void exportCurrentPdf(const QString &outputPath);
+    Q_INVOKABLE void addPage();
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) override;
