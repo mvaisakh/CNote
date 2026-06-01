@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
-import Qt5Compat.GraphicalEffects
 import CNote.Core
 
 Item {
@@ -38,11 +37,12 @@ Item {
         border.width: 1
         clip: true
 
-        FastBlur {
+        MultiEffect {
             anchors.fill: parent
             source: backgroundCapturer
-            radius: 64
-            transparentBorder: true
+            blurEnabled: true
+            blur: 1.0
+            blurMax: 64
             z: -1
         }
 
@@ -167,6 +167,30 @@ Item {
             width: 1
             height: 32
             color: "#22FFFFFF"
+        }
+
+        Button {
+            id: addPageBtn
+            visible: canvas && canvas.pdfPath.endsWith(".note")
+            onClicked: if (canvas) canvas.addPage()
+            background: Rectangle {
+                implicitWidth: 44
+                implicitHeight: 44
+                color: addPageBtn.hovered ? "#22FFFFFF" : "transparent"
+                radius: 22
+                Behavior on color { ColorAnimation { duration: 200 } }
+            }
+            contentItem: Item {
+                Image {
+                    anchors.centerIn: parent
+                    width: 24
+                    height: 24
+                    source: "qrc:/CNote/Core/icons/add.svg"
+                    sourceSize: Qt.size(64, 64)
+                    smooth: true
+                    opacity: 0.9
+                }
+            }
         }
 
         Button {
