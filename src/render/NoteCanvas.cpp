@@ -57,8 +57,20 @@ QSGGeometryNode* NoteCanvas::createStrokeNode(const Stroke& s)
             const auto& p3 = (i == s.points.size() - 2) ? p2 : s.points[i+2];
 
             smoothed.push_back(p1);
-            for (int step = 1; step < 5; ++step) {
-                smoothed.push_back(interpolatePoints(p0, p1, p2, p3, step / 5.0f));
+            
+            float dx = p2.x - p1.x;
+            float dy = p2.y - p1.y;
+            float distSq = dx*dx + dy*dy;
+            
+            int numSteps = 5;
+            if (distSq < 25.0f) {
+                numSteps = 1; // Very close, no extra interpolation
+            } else if (distSq < 100.0f) {
+                numSteps = 2;
+            }
+
+            for (int step = 1; step < numSteps; ++step) {
+                smoothed.push_back(interpolatePoints(p0, p1, p2, p3, step / (float)numSteps));
             }
         }
         smoothed.push_back(s.points.back());
