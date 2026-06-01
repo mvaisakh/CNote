@@ -29,33 +29,37 @@ Rectangle {
         standardButtons: Dialog.Ok | Dialog.Cancel
 
         background: Rectangle {
-            color: root.colorSurface
+            color: "#CC1C1B1F"
             radius: 28
-            border.color: "#33FFFFFF"
+            border.color: "#44FFFFFF"
+            border.width: 1
         }
 
         Column {
-            spacing: 20
+            spacing: 24
             width: parent.width
-            padding: 10
+            padding: 16
             Text { 
                 text: "What shall we call this note?"
                 color: "white" 
-                font.pixelSize: 18
-                font.weight: Font.Medium
+                font.pixelSize: 20
+                font.weight: Font.DemiBold
             }
             TextField {
                 id: nameField
                 width: parent.width
                 placeholderText: "Meeting with the team..."
+                placeholderTextColor: "#77FFFFFF"
                 color: "white"
                 font.pixelSize: 16
-                padding: 12
+                padding: 16
                 background: Rectangle { 
-                    color: "#11FFFFFF"
+                    color: nameField.activeFocus ? "#22FFFFFF" : "#11FFFFFF"
                     radius: 12
-                    border.color: parent.activeFocus ? root.colorPrimary : "#22FFFFFF"
-                    border.width: 1
+                    border.color: nameField.activeFocus ? root.colorPrimary : "#33FFFFFF"
+                    border.width: nameField.activeFocus ? 2 : 1
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Behavior on border.color { ColorAnimation { duration: 200 } }
                 }
                 onAccepted: nameDialog.accept()
             }
@@ -201,17 +205,26 @@ Rectangle {
                             radius: 16
                             clip: true
                             gradient: Gradient {
-                                GradientStop { position: 0.0; color: modelData.endsWith(".note") ? "#381E72" : "#1A1C1E" }
-                                GradientStop { position: 1.0; color: modelData.endsWith(".note") ? "#4F378B" : "#0F1113" }
+                                GradientStop { position: 0.0; color: modelData.endsWith(".note") ? "#5C3E84" : "#2A2C2E" }
+                                GradientStop { position: 1.0; color: modelData.endsWith(".note") ? "#35225D" : "#151719" }
+                            }
+                            
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: 1
+                                radius: 15
+                                color: "transparent"
+                                border.color: "#33FFFFFF"
                             }
                             
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.endsWith(".note") ? "NOTE" : "PDF"
                                 color: "white"
-                                opacity: 0.2
+                                opacity: 0.3
                                 font.pixelSize: 32
                                 font.weight: Font.Black
+                                font.letterSpacing: 2
                             }
                         }
 
